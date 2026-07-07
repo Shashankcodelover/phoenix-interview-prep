@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Phoenix — Portfolio Capture & STAR Story Mining</title>
+  <meta name="description" content="Capture your hackathon projects, auto-mine STAR interview stories, and build your portfolio powered by Phoenix.">
+  <link rel="stylesheet" href="../phoenix.css">
+  <style>
+    .portfolio-layout {
+      display: grid;
+      grid-template-columns: 360px 1fr;
+      gap: 28px;
+      margin-top: 10px;
+    }
+
+    @media (max-width: 1000px) {
+      .portfolio-layout { grid-template-columns: 1fr; }
+    }
+
+    /* Project Cards Grid */
+    .projects-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 20px;
+    }
+
+    .project-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      cursor: pointer;
+      transition: var(--transition-smooth);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .project-card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: var(--gradient-brand);
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      border-radius: inherit;
+    }
+
+    .project-card:hover {
+      transform: translateY(-4px);
+      border-color: rgba(0, 245, 255, 0.25);
+      box-shadow: var(--shadow-glow-cyan);
+    }
+
+    .project-card:hover::before {
+      opacity: 0.03;
+    }
+
+    .project-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 14px;
+    }
+
+    .project-card-title {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      line-height: 1.3;
+      flex: 1;
+    }
+
+    .project-card-meta {
+      font-size: 0.78rem;
+      color: var(--text-secondary);
+      margin-bottom: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .project-card-desc {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      line-height: 1.6;
+      margin-bottom: 16px;
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .tech-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 16px;
+    }
+
+    .tech-tag {
+      background: rgba(0, 245, 255, 0.07);
+      border: 1px solid rgba(0, 245, 255, 0.15);
+      color: var(--cyan);
+      font-size: 0.7rem;
+      font-weight: 600;
+      padding: 3px 10px;
+      border-radius: 50px;
+      letter-spacing: 0.5px;
+    }
+
+    .tech-tag.proven {
+      background: rgba(74, 222, 128, 0.07);
+      border-color: rgba(74, 222, 128, 0.2);
+      color: var(--green);
+    }
+
+    .project-card-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 4px;
+    }
+
+    /* STAR Story Modal */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.75);
+      backdrop-filter: blur(8px);
+      z-index: 1000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .modal-overlay.active {
+      display: flex;
+    }
+
+    .modal-box {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-xl);
+      width: 100%;
+      max-width: 720px;
+      max-height: 88vh;
+      overflow-y: auto;
+      padding: 36px;
+      position: relative;
+    }
+
+    .modal-close {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      color: var(--text-secondary);
+      cursor: pointer;
+      width: 34px;
+      height: 34px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.1rem;
+      transition: var(--transition-fast);
+    }
+
+    .modal-close:hover {
+      color: var(--coral);
+      border-color: rgba(244,63,94,0.3);
+    }
+
+    .star-story-output {
+      background: rgba(0,0,0,0.25);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 24px;
+      font-size: 0.9rem;
+      line-height: 1.8;
+      color: var(--text-secondary);
+      white-space: pre-wrap;
+      margin-top: 16px;
+      min-height: 120px;
+    }
+
+    .star-story-output strong {
+      color: var(--cyan);
+    }
+
+    /* Proven Skills Section */
+    .skills-proven-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .skill-proven-badge {
+      background: rgba(74, 222, 128, 0.08);
+      border: 1px solid rgba(74, 222, 128, 0.2);
+      color: var(--green);
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 4px 12px;
+      border-radius: 50px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    /* Empty state */
+    .portfolio-empty {
+      text-align: center;
+      padding: 80px 40px;
+      color: var(--text-secondary);
+    }
+
+    .portfolio-empty .icon {
+      font-size: 4rem;
+      margin-bottom: 20px;
+      display: block;
+    }
+
+    .portfolio-empty h3 {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 1.3rem;
+      color: var(--text-primary);
+      margin-bottom: 10px;
+    }
+
+    /* Won badge */
+    .won-badge {
+      background: linear-gradient(135deg, rgba(255,193,7,0.15), rgba(255,138,0,0.1));
+      border: 1px solid rgba(255,193,7,0.3);
+      color: #ffc107;
+      font-size: 0.65rem;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 50px;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+
+    /* XP award toast */
+    .xp-toast {
+      position: fixed;
+      bottom: 30px;
+      right: 30px;
+      background: linear-gradient(135deg, var(--bg-card), rgba(0,245,255,0.1));
+      border: 1px solid rgba(0,245,255,0.3);
+      border-radius: var(--radius-lg);
+      padding: 16px 24px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      z-index: 999;
+      transform: translateX(120%);
+      transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .xp-toast.show {
+      transform: translateX(0);
+    }
+
+    .xp-toast-icon {
+      font-size: 1.8rem;
+    }
+
+    .xp-toast-text strong {
+      color: var(--cyan);
+      font-family: 'Space Grotesk', sans-serif;
+      display: block;
+      font-size: 0.95rem;
+    }
+
+    .xp-toast-text span {
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Navigation -->
+  <nav class="navbar">
+    <div class="navbar-brand" onclick="window.location.href='../dashboard/dashboard.html'">PHOENIX</div>
+    <ul class="nav-links">
+      <li><a href="../dashboard/dashboard.html">Dashboard</a></li>
+      <li class="nav-dropdown">
+        <a href="#">Prep Roadmap ▾</a>
+        <div class="nav-dropdown-content">
+          <a href="../interview-prep/roadmap.html">🗺️ Adaptive Syllabus</a>
+          <a href="../interview-prep/practice.html">💬 Mock Interview</a>
+          <a href="../interview-prep/resume.html">📝 Resume Optimizer</a>
+          <a href="../interview-prep/questions.html">🏷️ Company Questions</a>
+          <a href="../interview-prep/peer-match.html">👥 Peer Mock Matching</a>
+        </div>
+      </li>
+      <li class="nav-dropdown">
+        <a href="#" class="active">Hackathons ▾</a>
+        <div class="nav-dropdown-content">
+          <a href="./agent.html">🤖 Hack-Auto Agent</a>
+          <a href="./view.html">📋 Discovery Feed</a>
+          <a href="./team.html">👥 Team Roster</a>
+          <a href="./chat.html">💬 Discord War Room</a>
+          <a href="./portfolio.html">🏆 Portfolio Capture</a>
+        </div>
+      </li>
+      <li><a href="../interview-prep/planner.html">Planner</a></li>
+      <li><a href="../profile/profile.html">👤 Profile</a></li>
+      <li><a href="#" id="logoutBtn" style="color: var(--coral);">Logout</a></li>
+    </ul>
+  </nav>
+
+  <!-- Particle Background -->
+  <canvas id="particles"></canvas>
+
+  <!-- XP Award Toast -->
+  <div class="xp-toast" id="xpToast">
+    <span class="xp-toast-icon">⚡</span>
+    <div class="xp-toast-text">
+      <strong id="xpToastTitle">+50 XP Earned!</strong>
+      <span id="xpToastSub">Portfolio project captured successfully</span>
+    </div>
+  </div>
+
+  <!-- STAR Story Mining Modal -->
+  <div class="modal-overlay" id="starModal">
+    <div class="modal-box">
+      <button class="modal-close" onclick="closeStarModal()">✕</button>
+      <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+        <span style="font-size: 2rem;">⭐</span>
+        <div>
+          <h2 class="font-space" style="font-size: 1.4rem; color: var(--cyan); margin: 0;">STAR Story Mining</h2>
+          <p style="font-size: 0.85rem; color: var(--text-secondary); margin: 2px 0 0;">Turn your hackathon project into a polished interview answer</p>
+        </div>
+      </div>
+      <hr style="border-color: var(--border-subtle); margin: 20px 0;">
+      <div>
+        <label style="font-size: 0.85rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 1px;">Project</label>
+        <strong id="starModalTitle" style="display: block; color: var(--text-primary); font-family: 'Space Grotesk', sans-serif; font-size: 1.1rem; margin-top: 4px;"></strong>
+      </div>
+      <div class="form-group" style="margin-top: 20px;">
+        <label>Your Role & Contribution in this project</label>
+        <textarea id="starRoleInput" rows="3" placeholder="e.g. I built the backend API using Node.js and integrated the ML model for recommendations..."></textarea>
+      </div>
+      <button class="btn btn-primary" id="mineStarBtn" onclick="mineStarStory()" style="width: 100%; margin-top: 4px;">
+        ⭐ Generate STAR Story with AI
+      </button>
+      <div id="starStoryOutput" class="star-story-output" style="display: none;"></div>
+      <div id="starCopyBtn" style="display: none; margin-top: 12px;">
+        <button class="btn btn-secondary" onclick="copyStarStory()" style="width: 100%;">📋 Copy Story to Clipboard</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="container">
+
+    <div class="page-header" style="text-align: left; margin-bottom: 30px;">
+      <h1 style="font-size: 2.4rem;">Portfolio Capture</h1>
+      <p style="margin: 5px 0 0;">Log post-hackathon projects, auto-mine STAR interview stories, and build a living portfolio from what you've actually built.</p>
+    </div>
+
+    <div class="portfolio-layout">
+
+      <!-- LEFT SIDEBAR: Submit new project form -->
+      <div>
+
+        <!-- Skills Proven Panel -->
+        <div class="glass-card" style="margin-bottom: 24px;">
+          <h3 class="font-space mb-2" style="font-size: 1.05rem; display: flex; justify-content: space-between; align-items: center;">
+            <span>Skills Proven 🧠</span>
+            <span class="badge badge-green" id="provenCountBadge">0 Skills</span>
+          </h3>
+          <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 12px; line-height: 1.5;">
+            Skills tagged in your portfolio projects are automatically marked <strong style="color: var(--green);">Demonstrated</strong> in your prep profile.
+          </p>
+          <div class="skills-proven-container" id="skillsProvenContainer">
+            <span style="font-size: 0.8rem; color: var(--text-muted);">No skills proven yet. Capture a project to start!</span>
+          </div>
+        </div>
+
+        <!-- Add new project form -->
+        <div class="glass-card">
+          <h3 class="font-space mb-2" style="font-size: 1.1rem;">📦 Capture New Project</h3>
+          <p style="font-size: 0.82rem; color: var(--text-secondary); margin-bottom: 20px; line-height: 1.5;">
+            Add a hackathon project you shipped. Captures automatically award XP and update your shared skill graph.
+          </p>
+          <form id="portfolioForm">
+            <div class="form-group">
+              <label>Project Title *</label>
+              <input type="text" id="projTitle" placeholder="e.g. Phoenix AI Interview Assistant" required>
+            </div>
+            <div class="form-group">
+              <label>Hackathon Name</label>
+              <input type="text" id="projHackName" placeholder="e.g. SIH 2026, Smart India Hackathon">
+            </div>
+            <div class="form-group">
+              <label>Project Description *</label>
+              <textarea id="projDesc" rows="4" placeholder="What problem did it solve? What did you build? What impact did it have?" required></textarea>
+            </div>
+            <div class="form-group">
+              <label>Tech Stack (comma-separated)</label>
+              <input type="text" id="projTech" placeholder="e.g. React, Node.js, MongoDB, Gemini API">
+            </div>
+            <div class="form-group">
+              <label>Outcome / Result</label>
+              <input type="text" id="projOutcome" placeholder="e.g. Won 1st place, Finalist, Built working demo">
+            </div>
+            <div class="form-group" style="flex-direction: row; align-items: center; gap: 12px; margin-bottom: 20px;">
+              <input type="checkbox" id="projWon" style="width: 18px; height: 18px; accent-color: var(--cyan); cursor: pointer;">
+              <label for="projWon" style="margin: 0; cursor: pointer;">🏆 This project won / placed in the hackathon</label>
+            </div>
+            <button type="submit" class="btn btn-primary" id="captureBtn" style="width: 100%;">
+              ⚡ Capture Project (+50 XP)
+            </button>
+          </form>
+        </div>
+
+      </div>
+
+      <!-- RIGHT MAIN: Portfolio gallery -->
+      <div>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+          <h2 class="font-space" style="font-size: 1.3rem;">My Projects</h2>
+          <span class="badge badge-cyan" id="projectCountBadge">0 Projects</span>
+        </div>
+
+        <!-- Project Cards -->
+        <div id="projectsGrid">
+          <!-- Skeleton loaders -->
+          <div class="projects-grid">
+            <div class="skeleton" style="height: 240px;"></div>
+            <div class="skeleton" style="height: 240px;"></div>
+            <div class="skeleton" style="height: 240px;"></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    const API_BASE_URL = 'http://localhost:5000/api';
+    let userId = null;
+    let userToken = null;
+    let allProjects = [];
+    let currentStarProject = null;
+
+    // Particle Background
+    const canvas = document.getElementById("particles");
+    const ctx = canvas.getContext("2d");
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    let particles = [];
+    for (let i = 0; i < 40; i++) {
+      particles.push({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        radius: Math.random() * 1.2,
+        dx: (Math.random() - 0.5) * 0.15,
+        dy: (Math.random() - 0.5) * 0.15
+      });
+    }
+    function animateParticles() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = "rgba(0, 245, 255, 0.25)";
+      particles.forEach(p => {
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+        ctx.fill();
+        p.x += p.dx;
+        p.y += p.dy;
+        if (p.x < 0 || p.x > canvas.width) p.dx *= -1;
+        if (p.y < 0 || p.y > canvas.height) p.dy *= -1;
+      });
+      requestAnimationFrame(animateParticles);
+    }
+    animateParticles();
+    window.addEventListener('resize', () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    });
+
+    // Auth check
+    document.addEventListener('DOMContentLoaded', () => {
+      userToken = localStorage.getItem('token');
+      const user = JSON.parse(localStorage.getItem('user') || '{}');
+      userId = user._id || user.id;
+
+      if (!userToken || !userId) {
+        window.location.href = '../auth/login.html';
+        return;
+      }
+
+      loadPortfolio();
+
+      document.getElementById('portfolioForm').addEventListener('submit', captureProject);
+    });
+
+    // Logout
+    document.getElementById('logoutBtn').addEventListener('click', (e) => {
+      e.preventDefault();
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      window.location.href = '../auth/login.html';
+    });
+
+    // Load portfolio from backend
+    async function loadPortfolio() {
+      try {
+        const res = await fetch(`${API_BASE_URL}/agent/portfolio/${userId}`, {
+          headers: { 'Authorization': `Bearer ${userToken}` }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          allProjects = data.projects || [];
+          renderProjects(allProjects);
+          renderSkillsProven(data.skillsProven || []);
+        }
+      } catch (e) {
+        console.error('Error loading portfolio:', e);
+        renderProjects([]);
+        renderSkillsProven([]);
+      }
+    }
+
+    // Render project cards
+    function renderProjects(projects) {
+      const grid = document.getElementById('projectsGrid');
+      const countBadge = document.getElementById('projectCountBadge');
+      countBadge.textContent = `${projects.length} Project${projects.length !== 1 ? 's' : ''}`;
+
+      if (projects.length === 0) {
+        grid.innerHTML = `
+          <div class="portfolio-empty">
+            <span class="icon">🚀</span>
+            <h3>No Projects Captured Yet</h3>
+            <p>Fill in the form to log your first hackathon project. Every project you capture earns <strong style="color: var(--cyan);">+50 XP</strong> and marks skills as proven!</p>
+          </div>
+        `;
+        return;
+      }
+
+      grid.innerHTML = '<div class="projects-grid"></div>';
+      const gridEl = grid.querySelector('.projects-grid');
+
+      projects.forEach((p, idx) => {
+        const techArr = Array.isArray(p.techStack) ? p.techStack : [];
+        const card = document.createElement('div');
+        card.className = 'project-card';
+        card.style.animationDelay = `${idx * 80}ms`;
+
+        card.innerHTML = `
+          <div class="project-card-header">
+            <span class="project-card-title">${p.title}</span>
+            ${p.won ? '<span class="won-badge">🏆 Winner</span>' : ''}
+          </div>
+          <div class="project-card-meta">
+            ${p.hackathonName ? `<span>🏁 ${p.hackathonName}</span>` : ''}
+            ${p.outcome ? `<span>🎯 ${p.outcome}</span>` : ''}
+          </div>
+          <p class="project-card-desc">${p.description}</p>
+          ${techArr.length > 0 ? `
+            <div class="tech-tags">
+              ${techArr.slice(0, 5).map(t => `<span class="tech-tag">${t}</span>`).join('')}
+              ${techArr.length > 5 ? `<span class="tech-tag">+${techArr.length - 5}</span>` : ''}
+            </div>
+          ` : ''}
+          <div class="project-card-actions">
+            <button class="btn btn-primary" onclick="openStarModal(${idx})" style="flex: 1; padding: 8px 14px; font-size: 0.8rem;">
+              ⭐ Mine STAR Story
+            </button>
+            ${p.starStory ? '<span class="badge badge-green" style="align-self: center;">Story Ready</span>' : ''}
+          </div>
+        `;
+        gridEl.appendChild(card);
+      });
+    }
+
+    // Render skills proven
+    function renderSkillsProven(skills) {
+      const container = document.getElementById('skillsProvenContainer');
+      const badge = document.getElementById('provenCountBadge');
+      badge.textContent = `${skills.length} Skill${skills.length !== 1 ? 's' : ''}`;
+
+      if (skills.length === 0) {
+        container.innerHTML = '<span style="font-size: 0.8rem; color: var(--text-muted);">No skills proven yet. Capture a project to start!</span>';
+        return;
+      }
+
+      container.innerHTML = skills.map(s => `
+        <div class="skill-proven-badge">
+          <span>✓</span>
+          <span>${s}</span>
+        </div>
+      `).join('');
+    }
+
+    // Capture new project
+    async function captureProject(e) {
+      e.preventDefault();
+      const btn = document.getElementById('captureBtn');
+      btn.disabled = true;
+      btn.textContent = '⏳ Saving...';
+
+      const title = document.getElementById('projTitle').value.trim();
+      const description = document.getElementById('projDesc').value.trim();
+      const techStackRaw = document.getElementById('projTech').value.trim();
+      const outcome = document.getElementById('projOutcome').value.trim();
+      const hackathonName = document.getElementById('projHackName').value.trim();
+      const won = document.getElementById('projWon').checked;
+
+      const techStack = techStackRaw
+        ? techStackRaw.split(',').map(s => s.trim()).filter(Boolean)
+        : [];
+
+      try {
+        const res = await fetch(`${API_BASE_URL}/agent/portfolio`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${userToken}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ userId, title, description, techStack, outcome, hackathonName, won })
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          // Show XP toast
+          document.getElementById('xpToastTitle').textContent = '+50 XP Earned! 🎉';
+          document.getElementById('xpToastSub').textContent = `Now Level ${data.level} — ${data.xp} Total XP`;
+          showToast();
+
+          // Reset form
+          document.getElementById('portfolioForm').reset();
+
+          // Reload portfolio
+          loadPortfolio();
+        } else {
+          const err = await res.json();
+          alert(err.message || 'Failed to save project.');
+        }
+      } catch (err) {
+        console.error(err);
+        alert('Server error. Make sure the backend is running.');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '⚡ Capture Project (+50 XP)';
+      }
+    }
+
+    // Show XP toast
+    function showToast() {
+      const toast = document.getElementById('xpToast');
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 4000);
+    }
+
+    // Open STAR modal
+    function openStarModal(projectIdx) {
+      currentStarProject = allProjects[projectIdx];
+      document.getElementById('starModalTitle').textContent = currentStarProject.title;
+      document.getElementById('starRoleInput').value = '';
+      document.getElementById('starStoryOutput').style.display = 'none';
+      document.getElementById('starCopyBtn').style.display = 'none';
+      document.getElementById('mineStarBtn').disabled = false;
+      document.getElementById('mineStarBtn').textContent = '⭐ Generate STAR Story with AI';
+      document.getElementById('starModal').classList.add('active');
+    }
+
+    function closeStarModal() {
+      document.getElementById('starModal').classList.remove('active');
+      currentStarProject = null;
+    }
+
+    // Mine STAR story using Gemini
+    async function mineStarStory() {
+      if (!currentStarProject) return;
+      const btn = document.getElementById('mineStarBtn');
+      const output = document.getElementById('starStoryOutput');
+      const copyBtn = document.getElementById('starCopyBtn');
+
+      btn.disabled = true;
+      btn.textContent = '⏳ Gemini is mining your story...';
+      output.style.display = 'block';
+      output.textContent = 'Analyzing your project and generating a professional STAR-format interview answer...';
+      copyBtn.style.display = 'none';
+
+      const role = document.getElementById('starRoleInput').value.trim() || 'Full Stack Developer';
+
+      try {
+        const res = await fetch(`${API_BASE_URL}/agent/mine-story`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${userToken}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            projectTitle: currentStarProject.title,
+            projectDescription: currentStarProject.description,
+            roleContribution: role,
+            techStack: (currentStarProject.techStack || []).join(', '),
+            hackathonName: currentStarProject.hackathonName || '',
+            outcome: currentStarProject.outcome || ''
+          })
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          // Render markdown-like formatting
+          const formatted = data.story
+            .replace(/\*\*(.*?)\*\*/g, '<strong style="color: var(--cyan);">$1</strong>')
+            .replace(/###\s?(.*)/g, '<h4 style="color: var(--orange); margin: 16px 0 6px; font-family: Space Grotesk, sans-serif;">$1</h4>')
+            .replace(/##\s?(.*)/g, '<h3 style="color: var(--cyan); margin: 20px 0 8px; font-family: Space Grotesk, sans-serif;">$1</h3>')
+            .replace(/\n/g, '<br>');
+          output.innerHTML = formatted;
+          copyBtn.style.display = 'block';
+        } else {
+          output.textContent = 'Error generating story. Check your API connection.';
+        }
+      } catch (err) {
+        output.textContent = 'Server error. Make sure the backend is running.';
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '🔁 Regenerate Story';
+      }
+    }
+
+    function copyStarStory() {
+      const output = document.getElementById('starStoryOutput');
+      const text = output.innerText;
+      navigator.clipboard.writeText(text).then(() => {
+        const btn = document.getElementById('starCopyBtn').querySelector('button');
+        btn.textContent = '✅ Copied to Clipboard!';
+        setTimeout(() => { btn.textContent = '📋 Copy Story to Clipboard'; }, 2500);
+      });
+    }
+
+    // Close modal on backdrop click
+    document.getElementById('starModal').addEventListener('click', (e) => {
+      if (e.target === document.getElementById('starModal')) closeStarModal();
+    });
+  </script>
+
+</body>
+</html>

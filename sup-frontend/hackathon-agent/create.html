@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Create Hackathon - Phoenix</title>
+  <link rel="stylesheet" href="../phoenix.css">
+  <style>
+    body {
+      overflow-x: hidden;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Navigation -->
+  <nav class="navbar">
+    <div class="navbar-brand" onclick="window.location.href='../dashboard/dashboard.html'">PHOENIX</div>
+    <ul class="nav-links">
+      <li><a href="../dashboard/dashboard.html">Dashboard</a></li>
+      <li class="nav-dropdown">
+        <a href="#">Prep Roadmap ▾</a>
+        <div class="nav-dropdown-content">
+          <a href="../interview-prep/roadmap.html">🗺️ Adaptive Syllabus</a>
+          <a href="../interview-prep/practice.html">💬 Mock Interview</a>
+          <a href="../interview-prep/resume.html">📝 Resume Optimizer</a>
+          <a href="../interview-prep/questions.html">🏷️ Company Questions</a>
+          <a href="../interview-prep/peer-match.html">👥 Peer Mock Matching</a>
+        </div>
+      </li>
+      <li class="nav-dropdown">
+        <a href="#" class="active">Hackathons ▾</a>
+        <div class="nav-dropdown-content">
+          <a href="./agent.html">🤖 Hack-Auto Agent</a>
+          <a href="./view.html">📋 Discovery Feed</a>
+          <a href="./team.html">👥 Team Roster</a>
+          <a href="./chat.html">💬 Discord War Room</a>
+          <a href="./portfolio.html">🏆 Portfolio Capture</a>
+        </div>
+      </li>
+      <li><a href="../interview-prep/planner.html">Planner</a></li>
+      <li><a href="../profile/profile.html">👤 Profile</a></li>
+      <li><a href="#" id="logoutBtn" style="color: var(--coral);">Logout</a></li>
+    </ul>
+  </nav>
+
+  <!-- Particle Background -->
+  <canvas id="particles"></canvas>
+
+  <div class="container" style="max-width: 800px;">
+    
+    <div class="page-header">
+      <h1>Create a New Hackathon</h1>
+      <p>Organize and post an upcoming hackathon event to the platform discovery feed.</p>
+    </div>
+
+    <!-- CREATE FORM CARD -->
+    <div class="glass-card">
+      <form id="createForm" style="margin-top: 15px;">
+        <div class="form-group">
+          <label>Hackathon Name *</label>
+          <input type="text" id="name" placeholder="Enter hackathon name" required>
+        </div>
+
+        <div class="form-group">
+          <label>Detailed Description *</label>
+          <textarea id="description" placeholder="Describe the prize pool, tracks, rules, and schedules..." rows="6" required></textarea>
+        </div>
+
+        <div class="flex-row">
+          <div style="flex: 1 1 200px;" class="form-group">
+            <label>Start Date *</label>
+            <input type="date" id="startDate" required>
+          </div>
+          <div style="flex: 1 1 200px;" class="form-group">
+            <label>Location / Venue *</label>
+            <input type="text" id="location" placeholder="e.g. Bangalore, Online" required>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Hosting Link (Registration URL) *</label>
+          <input type="url" id="hostingLink" placeholder="https://unstop.com/o/event-name" required>
+          <small style="color: var(--text-muted); margin-top: 6px; display: block; font-size: 0.75rem;">Students will be redirected here or auto-registered via Aegis Puppeteer.</small>
+        </div>
+
+        <div class="flex-row">
+          <div style="flex: 1 1 200px;" class="form-group">
+            <label>Prize Pool Value</label>
+            <input type="text" id="prizePool" placeholder="e.g. ₹2,00,000">
+          </div>
+          <div style="flex: 1 1 200px;" class="form-group">
+            <label>Banner Image Logo</label>
+            <input type="file" id="logo" accept="image/*" style="padding: 8px;">
+          </div>
+        </div>
+
+        <div class="form-actions" style="margin-top: 25px; display: flex; gap: 12px; justify-content: flex-end;">
+          <a href="../dashboard/dashboard.html" class="btn btn-secondary">Cancel</a>
+          <button type="submit" class="btn btn-primary">Create Event</button>
+        </div>
+      </form>
+    </div>
+
+  </div>
+
+  <script>
+    const API_BASE_URL = 'http://localhost:5000/api';
+    let userToken = null;
+
+    document.addEventListener('DOMContentLoaded', () => {
+        userToken = localStorage.getItem('token');
+        if (!userToken) {
+            window.location.href = '../auth/login.html';
+            return;
+        }
+
+        animateParticles();
+    });
+
+    // Particle Background
+    const canvas = document.getElementById("particles");
+    const ctx = canvas.getContext("2d");
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    let particles = [];
+    for (let i = 0; i < 40; i++) {
+        particles.push({
+            x: Math.random() * canvas.width,
+            y: Math.random() * canvas.height,
+            radius: Math.random() * 1.2,
+            dx: (Math.random() - 0.5) * 0.15,
+            dy: (Math.random() - 0.5) * 0.15
+        });
+    }
+    function animateParticles() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = "rgba(0, 245, 255, 0.25)";
+        particles.forEach(p => {
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+            ctx.fill();
+            p.x += p.dx;
+            p.y += p.dy;
+            if (p.x < 0 || p.x > canvas.width) p.dx *= -1;
+            if (p.y < 0 || p.y > canvas.height) p.dy *= -1;
+        });
+        requestAnimationFrame(animateParticles);
+    }
+    animateParticles();
+
+    // Form submit
+    document.getElementById('createForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const formData = new FormData();
+        formData.append('name', document.getElementById('name').value);
+        formData.append('description', document.getElementById('description').value);
+        formData.append('date', document.getElementById('startDate').value);
+        formData.append('location', document.getElementById('location').value);
+        formData.append('hostingLink', document.getElementById('hostingLink').value);
+        
+        const prize = document.getElementById('prizePool').value;
+        if (prize) formData.append('prizePool', prize);
+
+        if (document.getElementById('logo').files[0]) {
+            formData.append('logo', document.getElementById('logo').files[0]);
+        }
+
+        try {
+            const res = await fetch(`${API_BASE_URL}/hackathons`, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${userToken}` },
+                body: formData
+            });
+
+            if (res.ok) {
+                alert('Hackathon created successfully!');
+                window.location.href = '../dashboard/dashboard.html';
+            } else {
+                const data = await res.json();
+                alert(data.message || 'Error creating hackathon.');
+            }
+        } catch (error) {
+            console.error('Create error:', error);
+            alert('An error occurred during submission.');
+        }
+    });
+
+    // Logout
+    document.getElementById('logoutBtn').addEventListener('click', (e) => {
+        e.preventDefault();
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        window.location.href = '../auth/login.html';
+    });
+  </script>
+</body>
+</html>

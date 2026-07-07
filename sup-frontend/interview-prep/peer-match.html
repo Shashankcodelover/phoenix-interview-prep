@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Peer Mock Matching - Phoenix</title>
+  <link rel="stylesheet" href="../phoenix.css">
+  <style>
+    .peer-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: var(--transition-smooth);
+      margin-bottom: 16px;
+    }
+
+    .peer-card:hover {
+      background: var(--bg-card-hover);
+      border-color: rgba(0, 245, 255, 0.2);
+      transform: translateY(-2px);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Navigation -->
+  <nav class="navbar">
+    <div class="navbar-brand" onclick="window.location.href='../dashboard/dashboard.html'">PHOENIX</div>
+    <ul class="nav-links">
+      <li><a href="../dashboard/dashboard.html">Dashboard</a></li>
+      <li class="nav-dropdown">
+        <a href="#" class="active">Prep Roadmap ▾</a>
+        <div class="nav-dropdown-content">
+          <a href="./roadmap.html">🗺️ Adaptive Syllabus</a>
+          <a href="./practice.html">💬 Mock Interview</a>
+          <a href="./resume.html">📝 Resume Optimizer</a>
+          <a href="./questions.html">🏷️ Company Questions</a>
+          <a href="./peer-match.html">👥 Peer Mock Matching</a>
+        </div>
+      </li>
+      <li class="nav-dropdown">
+        <a href="#">Hackathons ▾</a>
+        <div class="nav-dropdown-content">
+          <a href="../hackathon-agent/agent.html">🤖 Hack-Auto Agent</a>
+          <a href="../hackathon-agent/view.html">📋 Discovery Feed</a>
+          <a href="../hackathon-agent/team.html">👥 Team Roster</a>
+          <a href="../hackathon-agent/chat.html">💬 Discord War Room</a>
+          <a href="../hackathon-agent/portfolio.html">🏆 Portfolio Capture</a>
+        </div>
+      </li>
+      <li><a href="./planner.html">Planner</a></li>
+      <li><a href="../profile/profile.html">👤 Profile</a></li>
+      <li><a href="#" id="logoutBtn" style="color: var(--coral);">Logout</a></li>
+    </ul>
+  </nav>
+
+  <!-- Particle Background -->
+  <canvas id="particles"></canvas>
+
+  <div class="container">
+    
+    <div class="page-header">
+      <h1>Peer Mock-Interview Matching</h1>
+      <p>Coordinate live behavioral and coding interviews with classmates or system peers. Share constructive feedback directly.</p>
+    </div>
+
+    <div class="flex-row">
+      
+      <!-- PEER LIST -->
+      <div class="col-main">
+        <h2 class="font-space mb-2" style="font-size: 1.3rem;">Available Classmates & Peers</h2>
+        <div id="peersListContainer">
+          <!-- Loaded dynamically -->
+        </div>
+      </div>
+
+      <!-- SCHEDULED MATCHES -->
+      <div class="col-sidebar">
+        <div class="glass-card">
+          <h3 class="font-space mb-2" style="font-size: 1.15rem;">Your Scheduled Matches</h3>
+          <div id="scheduledMatchesContainer" style="display: flex; flex-direction: column; gap: 12px; margin-top: 15px;">
+            <p style="color: var(--text-secondary); font-size: 0.85rem; text-align: center; padding: 20px 0;">
+              No sessions scheduled. Book a slot with an available peer on the left.
+            </p>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <script>
+    const API_BASE_URL = 'http://localhost:5000/api';
+    let userToken = null;
+    let myUserId = null;
+
+    document.addEventListener('DOMContentLoaded', () => {
+        userToken = localStorage.getItem('token');
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
+        myUserId = user._id || user.id;
+
+        if (!userToken || !myUserId) {
+            window.location.href = '../auth/login.html';
+            return;
+        }
+
+        animateParticles();
+        loadAvailablePeers();
+    });
+
+    // Particle Background
+    const canvas = document.getElementById("particles");
+    const ctx = canvas.getContext("2d");
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    let particles = [];
+    for (let i = 0; i < 40; i++) {
+        particles.push({
+            x: Math.random() * canvas.width,
+            y: Math.random() * canvas.height,
+            radius: Math.random() * 1.2,
+            dx: (Math.random() - 0.5) * 0.15,
+            dy: (Math.random() - 0.5) * 0.15
+        });
+    }
+    function animateParticles() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = "rgba(0, 245, 255, 0.25)";
+        particles.forEach(p => {
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+            ctx.fill();
+            p.x += p.dx;
+            p.y += p.dy;
+            if (p.x < 0 || p.x > canvas.width) p.dx *= -1;
+            if (p.y < 0 || p.y > canvas.height) p.dy *= -1;
+        });
+        requestAnimationFrame(animateParticles);
+    }
+    animateParticles();
+
+    // Fetch platform users
+    async function loadAvailablePeers() {
+        try {
+            const res = await fetch(`${API_BASE_URL}/users`, {
+                headers: { 'Authorization': `Bearer ${userToken}` }
+            });
+            if (res.ok) {
+                const users = await res.json();
+                renderPeers(users);
+            }
+        } catch (e) {
+            console.error(e);
+            renderMockPeers();
+        }
+    }
+
+    function renderMockPeers() {
+        const mockUsers = [
+            { _id: "1", name: "Alice Johnson", targetRole: "Fullstack React Developer", level: 3, xp: 260 },
+            { _id: "2", name: "Bob Smith", targetRole: "Machine Learning Engineer", level: 4, xp: 380 },
+            { _id: "3", name: "Carol Lee", targetRole: "Mobile Android Programmer", level: 2, xp: 140 }
+        ];
+        renderPeers(mockUsers);
+    }
+
+    function renderPeers(users) {
+        const container = document.getElementById('peersListContainer');
+        container.innerHTML = '';
+
+        // Filter out self
+        const activePeers = users.filter(u => u._id !== myUserId);
+
+        if (activePeers.length === 0) {
+            container.innerHTML = `
+              <div class="empty-state">
+                <div class="icon">👥</div>
+                <h3>No Active Peers Available</h3>
+                <p>Ensure other candidates have completed signup to list them here.</p>
+              </div>
+            `;
+            return;
+        }
+
+        activePeers.forEach(peer => {
+            const card = document.createElement('div');
+            card.className = 'peer-card';
+
+            const level = peer.level || Math.floor((peer.xp || 0) / 100) + 1;
+
+            card.innerHTML = `
+              <div>
+                <strong style="color:var(--text-primary); font-size:1.15rem; display:block;">${peer.name}</strong>
+                <span style="font-size:0.85rem; color:var(--text-secondary); display:block; margin-top:2px;">
+                  🎯 Target: ${peer.targetRole || 'Software Engineer'}
+                </span>
+                <span class="badge badge-purple" style="margin-top:8px;">Level ${level}</span>
+              </div>
+              <div style="display:flex; flex-direction:column; gap: 8px; align-items:flex-end;">
+                <select id="timeSelect-${peer._id}" style="padding: 6px 12px; font-size:0.8rem; margin-bottom:0;">
+                  <option value="Today - 4:00 PM">Today - 4:00 PM</option>
+                  <option value="Tomorrow - 2:00 PM">Tomorrow - 2:00 PM</option>
+                  <option value="Friday - 11:00 AM">Friday - 11:00 AM</option>
+                </select>
+                <button class="btn btn-primary" onclick="scheduleSession('${peer._id}', '${peer.name}')" style="padding: 6px 14px; font-size:0.8rem;">Book Slot</button>
+              </div>
+            `;
+            container.appendChild(card);
+        });
+    }
+
+    function scheduleSession(peerId, peerName) {
+        const select = document.getElementById(`timeSelect-${peerId}`);
+        const chosenTime = select.value;
+
+        // Post mock list card to schedule
+        const schedContainer = document.getElementById('scheduledMatchesContainer');
+        
+        // Remove empty state placeholder if first session
+        if (schedContainer.innerHTML.includes('No sessions scheduled')) {
+            schedContainer.innerHTML = '';
+        }
+
+        const card = document.createElement('div');
+        card.className = 'log-row';
+        card.innerHTML = `
+          <div>
+            <strong style="color: var(--cyan); display:block; font-size:0.85rem;">Mock Interview w/ ${peerName}</strong>
+            <span style="font-size:0.75rem; color: var(--text-secondary);">${chosenTime}</span>
+          </div>
+          <span class="badge badge-green">Scheduled</span>
+        `;
+        schedContainer.appendChild(card);
+
+        alert(`Invitation request dispatched to ${peerName} for ${chosenTime}!`);
+    }
+
+    // Logout
+    document.getElementById('logoutBtn').addEventListener('click', (e) => {
+        e.preventDefault();
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        window.location.href = '../auth/login.html';
+    });
+  </script>
+
+</body>
+</html>

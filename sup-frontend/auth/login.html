@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Login - Phoenix</title>
+  <link rel="stylesheet" href="../phoenix.css">
+  <style>
+    body {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      overflow: hidden;
+    }
+
+    .auth-card {
+      width: 100%;
+      max-width: 400px;
+      padding: 35px;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Particle Canvas -->
+  <canvas id="particles"></canvas>
+
+  <!-- Login Card -->
+  <div class="glass-card auth-card">
+    <h1 class="font-space" style="font-size: 2.2rem; background: var(--gradient-brand); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin-bottom: 8px;">PHOENIX</h1>
+    <p style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 25px;">Access Your Placement Command Center</p>
+
+    <form id="loginForm">
+      <div class="form-group">
+        <input type="email" id="email" placeholder="Email Address" required />
+      </div>
+      <div class="form-group">
+        <input type="password" id="password" placeholder="Password" required />
+      </div>
+      <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 10px;">Login 🚀</button>
+    </form>
+
+    <p id="message" style="color: var(--coral); font-size: 0.85rem; margin-top: 15px;"></p>
+    <p style="color: var(--text-secondary); font-size: 0.85rem; margin-top: 20px;">
+      Don't have an account? <a href="signup.html" style="color: var(--cyan); font-weight: 600;">Signup</a>
+    </p>
+  </div>
+
+  <script>
+    // Particle Background
+    const canvas = document.getElementById("particles");
+    const ctx = canvas.getContext("2d");
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    let particles = [];
+    for (let i = 0; i < 40; i++) {
+        particles.push({
+            x: Math.random() * canvas.width,
+            y: Math.random() * canvas.height,
+            radius: Math.random() * 1.2,
+            dx: (Math.random() - 0.5) * 0.15,
+            dy: (Math.random() - 0.5) * 0.15
+        });
+    }
+    function animateParticles() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = "rgba(0, 245, 255, 0.25)";
+        particles.forEach(p => {
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+            ctx.fill();
+            p.x += p.dx;
+            p.y += p.dy;
+            if (p.x < 0 || p.x > canvas.width) p.dx *= -1;
+            if (p.y < 0 || p.y > canvas.height) p.dy *= -1;
+        });
+        requestAnimationFrame(animateParticles);
+    }
+    animateParticles();
+    window.addEventListener('resize', () => {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+    });
+  </script>
+
+  <script src="auth.js"></script>
+</body>
+</html>

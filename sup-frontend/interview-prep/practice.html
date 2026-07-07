@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Mock Interview Simulator - Phoenix</title>
+  <link rel="stylesheet" href="../phoenix.css">
+  <style>
+    .chat-messages {
+      height: 480px;
+    }
+
+    .feedback-panel {
+      background: rgba(255, 138, 0, 0.03);
+      border: 1px solid rgba(255, 138, 0, 0.15);
+      border-radius: var(--radius-md);
+      padding: 20px;
+      margin-top: 15px;
+      font-size: 0.88rem;
+      line-height: 1.6;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Navigation -->
+  <nav class="navbar">
+    <div class="navbar-brand" onclick="window.location.href='../dashboard/dashboard.html'">PHOENIX</div>
+    <ul class="nav-links">
+      <li><a href="../dashboard/dashboard.html">Dashboard</a></li>
+      <li class="nav-dropdown">
+        <a href="#" class="active">Prep Roadmap ▾</a>
+        <div class="nav-dropdown-content">
+          <a href="./roadmap.html">🗺️ Adaptive Syllabus</a>
+          <a href="./practice.html">💬 Mock Interview</a>
+          <a href="./resume.html">📝 Resume Optimizer</a>
+          <a href="./questions.html">🏷️ Company Questions</a>
+          <a href="./peer-match.html">👥 Peer Mock Matching</a>
+        </div>
+      </li>
+      <li class="nav-dropdown">
+        <a href="#">Hackathons ▾</a>
+        <div class="nav-dropdown-content">
+          <a href="../hackathon-agent/agent.html">🤖 Hack-Auto Agent</a>
+          <a href="../hackathon-agent/view.html">📋 Discovery Feed</a>
+          <a href="../hackathon-agent/team.html">👥 Team Roster</a>
+          <a href="../hackathon-agent/chat.html">💬 Discord War Room</a>
+          <a href="../hackathon-agent/portfolio.html">🏆 Portfolio Capture</a>
+        </div>
+      </li>
+      <li><a href="./planner.html">Planner</a></li>
+      <li><a href="../profile/profile.html">👤 Profile</a></li>
+      <li><a href="#" id="logoutBtn" style="color: var(--coral);">Logout</a></li>
+    </ul>
+  </nav>
+
+  <!-- Particle Background -->
+  <canvas id="particles"></canvas>
+
+  <div class="container">
+    
+    <div class="page-header">
+      <h1>AI Mock Interview Simulator</h1>
+      <p>Simulate dynamic placement interviews for your target role. Receive real-time structure and filler-word critiques from Gemini.</p>
+    </div>
+
+    <div class="flex-row">
+      
+      <!-- MAIN CHAT AREA -->
+      <div class="col-main">
+        <div class="glass-card chat-container">
+          <div class="chat-messages" id="chatBox">
+            <div class="message message-ai">
+              <strong>Phoenix Interviewer:</strong><br>
+              Hello! I'm your AI interviewer today. I see you are preparing for a technical placement. Let me know when you are ready, and tell me: <strong>What is your target role, and what programming languages are you most comfortable with?</strong>
+            </div>
+          </div>
+          <form id="chatForm" class="chat-input-area">
+            <input type="text" id="chatInput" placeholder="Type your response here..." required autocomplete="off">
+            <button type="submit" class="btn btn-primary" id="sendBtn">Send 🚀</button>
+          </form>
+        </div>
+      </div>
+
+      <!-- CRITIQUE PANEL SIDEBAR -->
+      <div class="col-sidebar">
+        
+        <div class="glass-card">
+          <h3 class="font-space mb-2" style="font-size: 1.15rem;">Live Assessment</h3>
+          <p style="color: var(--text-secondary); font-size: 0.8rem; line-height: 1.4;">Real-time communication, pacing, and filler-word statistics will populate below as you reply.</p>
+          
+          <div class="feedback-panel" id="critiqueBox">
+            <strong style="color: var(--orange);">System Monitor:</strong>
+            <p style="margin-top: 8px; color: var(--text-secondary); font-size: 0.85rem;">Session idle. Type your target role in the chat interface to initiate testing.</p>
+          </div>
+
+          <div style="margin-top: 24px; display: flex; flex-direction: column; gap: 10px;">
+            <button class="btn btn-secondary" onclick="resetInterview()" style="width: 100%;">
+              🔄 Reset Session
+            </button>
+          </div>
+        </div>
+
+        <div class="glass-card">
+          <h3 class="font-space mb-2" style="font-size: 1.1rem;">Interview Tips</h3>
+          <ul style="color: var(--text-secondary); font-size: 0.8rem; padding-left: 15px; display: flex; flex-direction: column; gap: 8px; margin-top: 10px;">
+            <li>Aim for 1-2 minute answers (around 100-150 words).</li>
+            <li>Structure project answers using the <strong>Situation, Task, Action, Result</strong> (STAR) format.</li>
+            <li>Minimize filler phrases such as "like", "um", "uh", or "basically".</li>
+          </ul>
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+  <script>
+    const API_BASE_URL = 'http://localhost:5000/api';
+    let conversationHistory = [];
+    let targetRole = "Software Engineer";
+    let userToken = null;
+
+    document.addEventListener('DOMContentLoaded', () => {
+        userToken = localStorage.getItem('token');
+        if (!userToken) {
+            window.location.href = '../auth/login.html';
+            return;
+        }
+
+        animateParticles();
+        
+        // Retrieve target role from user profile
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
+        const userId = user._id || user.id;
+        fetch(`${API_BASE_URL}/profile/${userId}`, {
+            headers: { 'Authorization': `Bearer ${userToken}` }
+        }).then(res => res.json()).then(data => {
+            if (data.targetRole) {
+                targetRole = data.targetRole;
+            }
+        }).catch(err => console.warn(err));
+    });
+
+    // Particle Background
+    const canvas = document.getElementById("particles");
+    const ctx = canvas.getContext("2d");
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    let particles = [];
+    for (let i = 0; i < 40; i++) {
+        particles.push({
+            x: Math.random() * canvas.width,
+            y: Math.random() * canvas.height,
+            radius: Math.random() * 1.2,
+            dx: (Math.random() - 0.5) * 0.15,
+            dy: (Math.random() - 0.5) * 0.15
+        });
+    }
+    function animateParticles() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = "rgba(0, 245, 255, 0.25)";
+        particles.forEach(p => {
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+            ctx.fill();
+            p.x += p.dx;
+            p.y += p.dy;
+            if (p.x < 0 || p.x > canvas.width) p.dx *= -1;
+            if (p.y < 0 || p.y > canvas.height) p.dy *= -1;
+        });
+        requestAnimationFrame(animateParticles);
+    }
+    animateParticles();
+
+    // Form submission
+    document.getElementById('chatForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const input = document.getElementById('chatInput');
+        const msg = input.value.trim();
+        if (!msg) return;
+
+        input.value = '';
+        appendMessage('user', msg);
+
+        const btn = document.getElementById('sendBtn');
+        btn.disabled = true;
+        btn.textContent = 'Critiquing...';
+
+        conversationHistory.push({ role: "user", parts: [{ text: msg }] });
+
+        try {
+            const res = await fetch(`${API_BASE_URL}/prep/mock-interview`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${userToken}`
+                },
+                body: JSON.stringify({ message: msg, history: conversationHistory, targetRole })
+            });
+            const data = await res.json();
+            if (res.ok && data.reply) {
+                appendMessage('ai', data.reply);
+                conversationHistory.push({ role: "model", parts: [{ text: data.reply }] });
+                updateCritique(msg, data.reply);
+            } else {
+                appendMessage('ai', "❌ Backend Gemini endpoint returned error status.");
+            }
+        } catch (err) {
+            appendMessage('ai', "❌ Connection timeout. Is server.js active?");
+        } finally {
+            btn.disabled = false;
+            btn.textContent = 'Send 🚀';
+        }
+    });
+
+    function appendMessage(sender, text) {
+        const box = document.getElementById('chatBox');
+        const div = document.createElement('div');
+        div.className = `message message-${sender}`;
+        
+        const label = sender === 'user' ? '<strong>You:</strong>' : '<strong>Phoenix Interviewer:</strong>';
+        div.innerHTML = `${label}<br>${formatMarkdown(text)}`;
+        
+        box.appendChild(div);
+        box.scrollTop = box.scrollHeight;
+    }
+
+    function formatMarkdown(text) {
+        return text
+            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+            .replace(/\*(.*?)\*/g, '<em>$1</em>')
+            .replace(/\n/g, '<br>');
+    }
+
+    function updateCritique(userMsg, aiMsg) {
+        const box = document.getElementById('critiqueBox');
+        const fillers = ["um", "like", "uh", "actually", "basically", "literally", "sort of", "kind of"];
+        const words = userMsg.toLowerCase().split(/\s+/);
+        let foundFillers = [];
+
+        fillers.forEach(f => {
+            if (words.includes(f)) {
+                foundFillers.push(`"${f}"`);
+            }
+        });
+
+        const fillerText = foundFillers.length > 0
+            ? `<p style="color: var(--coral); margin-top: 8px;">⚠️ <strong>Filler words detected:</strong> ${foundFillers.join(', ')}. Try to avoid these during formal interviews.</p>`
+            : `<p style="color: var(--green); margin-top: 8px;">✓ <strong>Clean pacing:</strong> No typical fillers detected.</p>`;
+
+        box.innerHTML = `
+            <strong style="color: var(--orange);">Live Response Assessment:</strong>
+            <p style="margin-top: 6px;"><strong>Word Count:</strong> ${words.length} words</p>
+            ${fillerText}
+            <div style="border-top: 1px solid rgba(255,138,0,0.15); margin-top: 12px; padding-top: 8px; font-size: 0.8rem; color: var(--text-secondary);">
+              <strong>STAR Structure:</strong> Verify if your response clarifies the Situation, Task, Action, and ultimate metrics Result of your projects.
+            </div>
+        `;
+    }
+
+    function resetInterview() {
+        conversationHistory = [];
+        const box = document.getElementById('chatBox');
+        box.innerHTML = `
+            <div class="message message-ai">
+              <strong>Phoenix Interviewer:</strong><br>
+              Interview reset. What is your target role and what programming languages are you most comfortable with?
+            </div>
+        `;
+        document.getElementById('critiqueBox').innerHTML = `
+            <strong style="color: var(--orange);">System Monitor:</strong>
+            <p style="margin-top: 8px; color: var(--text-secondary); font-size: 0.85rem;">Session reset. Type in the chat interface to begin testing.</p>
+        `;
+    }
+
+    // Logout
+    document.getElementById('logoutBtn').addEventListener('click', (e) => {
+        e.preventDefault();
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        window.location.href = '../auth/login.html';
+    });
+  </script>
+
+</body>
+</html>

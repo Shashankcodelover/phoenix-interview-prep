@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Make Your Team - Phoenix</title>
+  <link rel="stylesheet" href="../phoenix.css">
+  <style>
+    .teams-grid, .users-grid, .invites-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 20px;
+      margin-top: 15px;
+    }
+
+    .team-card, .user-card, .invite-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      transition: var(--transition-smooth);
+    }
+
+    .team-card:hover, .user-card:hover, .invite-card:hover {
+      background: var(--bg-card-hover);
+      border-color: rgba(0, 245, 255, 0.2);
+      transform: translateY(-2px);
+    }
+
+    .team-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+      border-bottom: 1px solid var(--border-subtle);
+      padding-bottom: 10px;
+    }
+
+    .team-body p {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      margin-bottom: 6px;
+    }
+
+    .team-actions, .user-actions, .invite-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 18px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Navigation -->
+  <nav class="navbar">
+    <div class="navbar-brand" onclick="window.location.href='../dashboard/dashboard.html'">PHOENIX</div>
+    <ul class="nav-links">
+      <li><a href="../dashboard/dashboard.html">Dashboard</a></li>
+      <li class="nav-dropdown">
+        <a href="#">Prep Roadmap ▾</a>
+        <div class="nav-dropdown-content">
+          <a href="../interview-prep/roadmap.html">🗺️ Adaptive Syllabus</a>
+          <a href="../interview-prep/practice.html">💬 Mock Interview</a>
+          <a href="../interview-prep/resume.html">📝 Resume Optimizer</a>
+          <a href="../interview-prep/questions.html">🏷️ Company Questions</a>
+          <a href="../interview-prep/peer-match.html">👥 Peer Mock Matching</a>
+        </div>
+      </li>
+      <li class="nav-dropdown">
+        <a href="#" class="active">Hackathons ▾</a>
+        <div class="nav-dropdown-content">
+          <a href="./agent.html">🤖 Hack-Auto Agent</a>
+          <a href="./view.html">📋 Discovery Feed</a>
+          <a href="./team.html">👥 Team Roster</a>
+          <a href="./chat.html">💬 Discord War Room</a>
+          <a href="./portfolio.html">🏆 Portfolio Capture</a>
+        </div>
+      </li>
+      <li><a href="../interview-prep/planner.html">Planner</a></li>
+      <li><a href="../profile/profile.html">👤 Profile</a></li>
+      <li><a href="#" id="logoutBtn" style="color: var(--coral);">Logout</a></li>
+    </ul>
+  </nav>
+
+  <!-- Particle Background -->
+  <canvas id="particles"></canvas>
+
+  <div class="container">
+    
+    <div class="page-header">
+      <h1>Make Your Team</h1>
+      <p>Build your squad, invite classmates, and coordinate roles for upcoming hackathon registrations.</p>
+    </div>
+
+    <!-- CREATE TEAM PANEL -->
+    <div class="glass-card mb-3">
+      <h2 class="font-space mb-2" style="font-size: 1.25rem;">Create a New Team</h2>
+      <form id="createTeamForm" style="margin-top: 15px;">
+        <div class="flex-row">
+          <div style="flex: 1 1 250px;" class="form-group">
+            <label>Team Name *</label>
+            <input type="text" id="teamName" placeholder="Enter team name" required>
+          </div>
+          <div style="flex: 0 0 150px;" class="form-group">
+            <label>Max Members</label>
+            <input type="number" id="maxMembers" placeholder="5" value="5" min="2" max="20">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Description</label>
+          <textarea id="description" placeholder="Describe your team's project goals..." rows="3"></textarea>
+        </div>
+
+        <div class="form-group">
+          <label>Team Domain Focus Tags (comma separated)</label>
+          <input type="text" id="domains" placeholder="AI/ML, Web Dev, Mobile, CyberSecurity">
+        </div>
+
+        <button type="submit" class="btn btn-primary">Create Team</button>
+      </form>
+    </div>
+
+    <!-- PENDING INVITES -->
+    <div class="glass-card mb-3">
+      <h2 class="font-space" style="font-size: 1.25rem;">Pending Team Invites</h2>
+      <div id="invitesList" class="invites-grid">
+        <p style="color: var(--text-secondary); font-size: 0.85rem; padding: 20px 0;">No pending invites.</p>
+      </div>
+    </div>
+
+    <!-- MY TEAMS -->
+    <div class="glass-card mb-3">
+      <h2 class="font-space" style="font-size: 1.25rem;">My Active Teams</h2>
+      <div id="myTeamsList" class="teams-grid">
+        <p style="color: var(--text-secondary); font-size: 0.85rem; padding: 20px 0;">Loading your teams...</p>
+      </div>
+    </div>
+
+    <!-- RECOMMENDED PEERS -->
+    <div class="glass-card">
+      <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-subtle); padding-bottom: 15px; margin-bottom: 20px;">
+        <h2 class="font-space" style="font-size: 1.25rem; margin-bottom: 0;">Recommended Classmates</h2>
+        <select id="domainFilter" style="width: auto; margin-bottom: 0; padding: 6px 12px; font-size: 0.85rem;">
+          <option value="">All Domains</option>
+          <option value="AI/ML">AI/ML</option>
+          <option value="Web Development">Web Development</option>
+          <option value="Mobile Apps">Mobile Apps</option>
+        </select>
+      </div>
+      <div id="recommendationsList" class="users-grid">
+        <p style="color: var(--text-secondary); font-size: 0.85rem; padding: 20px 0;">Loading recommendations...</p>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    const API_BASE_URL = 'http://localhost:5000/api';
+    let currentUserId = null;
+    let currentToken = null;
+
+    document.addEventListener('DOMContentLoaded', () => {
+        currentToken = localStorage.getItem('token');
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
+        currentUserId = user._id || user.id;
+
+        if (!currentToken || !currentUserId) {
+            window.location.href = '../auth/login.html';
+            return;
+        }
+
+        animateParticles();
+        loadMyTeams();
+        loadRecommendations();
+        loadPendingInvites();
+    });
+
+    // Particle Background
+    const canvas = document.getElementById("particles");
+    const ctx = canvas.getContext("2d");
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    let particles = [];
+    for (let i = 0; i < 40; i++) {
+        particles.push({
+            x: Math.random() * canvas.width,
+            y: Math.random() * canvas.height,
+            radius: Math.random() * 1.2,
+            dx: (Math.random() - 0.5) * 0.15,
+            dy: (Math.random() - 0.5) * 0.15
+        });
+    }
+    function animateParticles() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = "rgba(0, 245, 255, 0.25)";
+        particles.forEach(p => {
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+            ctx.fill();
+            p.x += p.dx;
+            p.y += p.dy;
+            if (p.x < 0 || p.x > canvas.width) p.dx *= -1;
+            if (p.y < 0 || p.y > canvas.height) p.dy *= -1;
+        });
+        requestAnimationFrame(animateParticles);
+    }
+    animateParticles();
+
+    // Create Team
+    document.getElementById('createTeamForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const teamName = document.getElementById('teamName').value;
+        const description = document.getElementById('description').value;
+        const maxMembers = parseInt(document.getElementById('maxMembers').value) || 5;
+        const domains = document.getElementById('domains').value
+            .split(',').map(s => s.trim()).filter(s => s);
+
+        try {
+            const res = await fetch(`${API_BASE_URL}/teams`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${currentToken}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ teamName, description, leaderId: currentUserId, domains, maxMembers })
+            });
+
+            if (res.ok) {
+                alert('Team created successfully!');
+                document.getElementById('createTeamForm').reset();
+                loadMyTeams();
+            } else {
+                const data = await res.json();
+                alert(data.message || 'Failed to create team.');
+            }
+        } catch (error) {
+            console.error('Error creating team:', error);
+            alert('Error creating team.');
+        }
+    });
+
+    // Load my teams
+    async function loadMyTeams() {
+        const container = document.getElementById('myTeamsList');
+        try {
+            const res = await fetch(`${API_BASE_URL}/teams/user/${currentUserId}`, {
+                headers: { 'Authorization': `Bearer ${currentToken}` }
+            });
+
+            if (res.ok) {
+                const teams = await res.json();
+                if (teams.length === 0) {
+                    container.innerHTML = '<p style="color: var(--text-secondary); font-size: 0.85rem; padding: 20px 0;">No active teams yet. Create a team above!</p>';
+                    return;
+                }
+
+                container.innerHTML = '';
+                teams.forEach(team => {
+                    const acceptedMembers = team.members.filter(m => m.status === 'accepted');
+                    const isLeader = team.leader._id === currentUserId;
+
+                    const card = document.createElement('div');
+                    card.className = 'team-card';
+                    card.innerHTML = `
+                        <div class="team-header">
+                            <h3 class="font-space" style="color: var(--cyan);">${team.teamName}</h3>
+                            ${isLeader ? '<span class="badge badge-cyan">Leader</span>' : '<span class="badge badge-purple">Member</span>'}
+                        </div>
+                        <div class="team-body">
+                            <p class="description">${team.description || 'No description'}</p>
+                            <p class="members">👥 ${acceptedMembers.length} / ${team.maxMembers} Members</p>
+                            <p class="domains">🎯 Track: ${team.domains.join(', ') || 'General'}</p>
+                            <div class="team-actions">
+                                <button class="btn btn-secondary" onclick="viewTeamMembers('${team._id}', '${team.teamName}')" style="font-size:0.8rem; padding:6px 12px;">View Members</button>
+                                ${isLeader ? `<button class="btn btn-primary" onclick="inviteToTeam('${team._id}')" style="font-size:0.8rem; padding:6px 12px;">Invite</button>` : ''}
+                            </div>
+                        </div>
+                    `;
+                    container.appendChild(card);
+                });
+            }
+        } catch (error) {
+            container.innerHTML = '<p style="color: var(--coral); font-size: 0.85rem; padding: 20px 0;">Error loading teams.</p>';
+        }
+    }
+
+    // Load recommendations
+    async function loadRecommendations() {
+        const container = document.getElementById('recommendationsList');
+        try {
+            const res = await fetch(`${API_BASE_URL}/profile/recommendations/${currentUserId}`, {
+                headers: { 'Authorization': `Bearer ${currentToken}` }
+            });
+
+            if (res.ok) {
+                const users = await res.json();
+                if (users.length === 0) {
+                    container.innerHTML = '<p style="color: var(--text-secondary); font-size: 0.85rem; padding: 20px 0;">No teammates recommended at this time.</p>';
+                    return;
+                }
+
+                container.innerHTML = '';
+                users.forEach(user => {
+                    const card = document.createElement('div');
+                    card.className = 'user-card';
+                    card.innerHTML = `
+                        <h4 class="font-space" style="color: var(--cyan); font-size: 1.05rem;">${user.name}</h4>
+                        <p style="font-size: 0.8rem; color: var(--text-secondary); margin-top:4px;">📍 State: ${user.state || 'Karnataka'}</p>
+                        <p style="font-size: 0.8rem; color: var(--text-secondary);">⚡ Experience: ${user.experience || 'Intermediate'}</p>
+                        <p style="font-size: 0.8rem; color: var(--text-secondary);">🎯 Skills: ${user.skills.slice(0, 3).join(', ') || 'Java, JavaScript'}</p>
+                        <div class="user-actions">
+                            <button class="btn btn-primary" onclick="connectWithUser('${user._id}', '${user.name}')" style="font-size:0.8rem; padding: 6px 12px;">Connect</button>
+                        </div>
+                    `;
+                    container.appendChild(card);
+                });
+            }
+        } catch (error) {
+            container.innerHTML = '<p style="color: var(--coral); font-size: 0.85rem; padding: 20px 0;">Error loading recommendations.</p>';
+        }
+    }
+
+    // Connect with user
+    function connectWithUser(userId, userName) {
+        window.location.href = `./chat.html?connect=${userId}&name=${encodeURIComponent(userName)}`;
+    }
+
+    // Load pending invites
+    async function loadPendingInvites() {
+        const container = document.getElementById('invitesList');
+        try {
+            const res = await fetch(`${API_BASE_URL}/teams/user/${currentUserId}`, {
+                headers: { 'Authorization': `Bearer ${currentToken}` }
+            });
+            if (res.ok) {
+                const teams = await res.json();
+                const invites = [];
+                teams.forEach(t => {
+                    t.members.forEach(m => {
+                        if (m.userId._id === currentUserId && m.status === 'invited') {
+                            invites.push({ team: t, membership: m });
+                        }
+                    });
+                });
+
+                if (invites.length === 0) {
+                    container.innerHTML = '<p style="color: var(--text-secondary); font-size: 0.85rem; padding: 20px 0;">No pending invites.</p>';
+                    return;
+                }
+
+                container.innerHTML = '';
+                invites.forEach(inv => {
+                    const card = document.createElement('div');
+                    card.className = 'invite-card';
+                    card.innerHTML = `
+                        <strong style="color: var(--cyan);">${inv.team.teamName}</strong>
+                        <p style="font-size:0.8rem; color: var(--text-secondary); margin-top:4px;">Leader: ${inv.team.leader.name}</p>
+                        <div class="invite-actions">
+                            <button class="btn btn-primary" onclick="respondInvite('${inv.team._id}', true)" style="font-size:0.8rem; padding:6px 12px;">Accept</button>
+                            <button class="btn btn-secondary" onclick="respondInvite('${inv.team._id}', false)" style="font-size:0.8rem; padding:6px 12px;">Reject</button>
+                        </div>
+                    `;
+                    container.appendChild(card);
+                });
+            }
+        } catch (err) {
+            console.error('Error loading invites', err);
+        }
+    }
+
+    async function respondInvite(teamId, accept) {
+        const endpoint = accept ? 'accept' : 'reject';
+        try {
+            const res = await fetch(`${API_BASE_URL}/teams/${teamId}/${endpoint}/${currentUserId}`, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${currentToken}` }
+            });
+            if (res.ok) {
+                alert(accept ? 'Invitation accepted!' : 'Invitation rejected.');
+                loadPendingInvites();
+                loadMyTeams();
+            }
+        } catch (e) {
+            alert('Error updating invite response.');
+        }
+    }
+
+    async function inviteToTeam(teamId) {
+        const email = prompt('Enter email address of coworker to invite:');
+        if (!email) return;
+        try {
+            const searchRes = await fetch(`${API_BASE_URL}/users/search?email=${encodeURIComponent(email)}`, {
+                headers: { 'Authorization': `Bearer ${currentToken}` }
+            });
+            if (!searchRes.ok) throw new Error('Candidate not registered on Phoenix.');
+            const targetUser = await searchRes.json();
+
+            const inviteRes = await fetch(`${API_BASE_URL}/teams/${teamId}/invite/${targetUser._id}`, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${currentToken}` }
+            });
+            if (inviteRes.ok) {
+                alert('Invitation sent successfully!');
+                loadMyTeams();
+            } else {
+                const errData = await inviteRes.json();
+                alert(errData.message || 'Invitation failed.');
+            }
+        } catch (err) {
+            alert(err.message || 'Error executing invitation.');
+        }
+    }
+
+    function viewTeamMembers(teamId, teamName) {
+        alert(`Members list for team "${teamName}" can be managed directly in the Discord War Room channel.`);
+    }
+
+    // Logout
+    document.getElementById('logoutBtn').addEventListener('click', (e) => {
+        e.preventDefault();
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        window.location.href = '../auth/login.html';
+    });
+  </script>
+</body>
+</html>

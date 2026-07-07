@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Adaptive Roadmap Generator - Phoenix</title>
+  <link rel="stylesheet" href="../phoenix.css">
+</head>
+<body>
+
+  <!-- Navigation -->
+  <nav class="navbar">
+    <div class="navbar-brand" onclick="window.location.href='../dashboard/dashboard.html'">PHOENIX</div>
+    <ul class="nav-links">
+      <li><a href="../dashboard/dashboard.html">Dashboard</a></li>
+      <li class="nav-dropdown">
+        <a href="#" class="active">Prep Roadmap ▾</a>
+        <div class="nav-dropdown-content">
+          <a href="./roadmap.html">🗺️ Adaptive Syllabus</a>
+          <a href="./practice.html">💬 Mock Interview</a>
+          <a href="./resume.html">📝 Resume Optimizer</a>
+          <a href="./questions.html">🏷️ Company Questions</a>
+          <a href="./peer-match.html">👥 Peer Mock Matching</a>
+        </div>
+      </li>
+      <li class="nav-dropdown">
+        <a href="#">Hackathons ▾</a>
+        <div class="nav-dropdown-content">
+          <a href="../hackathon-agent/agent.html">🤖 Hack-Auto Agent</a>
+          <a href="../hackathon-agent/view.html">📋 Discovery Feed</a>
+          <a href="../hackathon-agent/team.html">👥 Team Roster</a>
+          <a href="../hackathon-agent/chat.html">💬 Discord War Room</a>
+          <a href="../hackathon-agent/portfolio.html">🏆 Portfolio Capture</a>
+        </div>
+      </li>
+      <li><a href="./planner.html">Planner</a></li>
+      <li><a href="../profile/profile.html">👤 Profile</a></li>
+      <li><a href="#" id="logoutBtn" style="color: var(--coral);">Logout</a></li>
+    </ul>
+  </nav>
+
+  <!-- Particle Background -->
+  <canvas id="particles"></canvas>
+
+  <div class="container">
+    
+    <div class="page-header">
+      <h1>Adaptive Roadmap Generator</h1>
+      <p>Configure your target role and available timeline to produce a prioritized daily placement syllabus based on your resume.</p>
+    </div>
+
+    <div class="flex-row">
+      
+      <!-- SIDEBAR SETTINGS -->
+      <div class="col-sidebar">
+        
+        <div class="glass-card">
+          <h3 class="font-space mb-2" style="font-size: 1.15rem;">Roadmap Parameters</h3>
+          <form id="roadmapForm" style="margin-top: 15px;">
+            <div class="form-group">
+              <label>Target Interview Role</label>
+              <input type="text" id="targetRole" placeholder="e.g. Fullstack Developer, ML Engineer" required value="Software Engineer">
+            </div>
+
+            <div class="form-group">
+              <label>Timeframe (Days)</label>
+              <select id="timeFrame">
+                <option value="7">7 Days (Cramming Mode)</option>
+                <option value="15">15 Days</option>
+                <option value="30" selected>30 Days</option>
+                <option value="60">60 Days (Comprehensive)</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label>Resume Text / Professional Context</label>
+              <textarea id="resumeText" placeholder="Paste your resume text here to build a personalized roadmap..." rows="8"></textarea>
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 10px;">
+              ⚡ Generate Roadmap
+            </button>
+          </form>
+        </div>
+
+        <!-- Career stats progress -->
+        <div class="glass-card">
+          <h3 class="font-space mb-2" style="font-size: 1.15rem;">Preparation Stats</h3>
+          <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 15px;">
+            <div class="log-row">
+              <span>Total XP:</span>
+              <strong id="xpVal" style="color: var(--cyan);">0 XP</strong>
+            </div>
+            <div class="log-row">
+              <span>Current Level:</span>
+              <strong id="levelVal" style="color: var(--purple);">Level 1</strong>
+            </div>
+            <div class="log-row">
+              <span>Daily Streak:</span>
+              <strong id="streakVal" style="color: var(--orange);">🔥 0 Days</strong>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- MAIN ROADMAP CONTAINER -->
+      <div class="col-main">
+        
+        <div class="glass-card" style="display: flex; justify-content: space-between; align-items: center; padding: 20px 28px;">
+          <h2 class="font-space" style="font-size: 1.25rem;">Daily Syllabus Timeline</h2>
+          <div style="display: flex; gap: 10px; align-items: center;">
+            <label for="cramToggle" style="color: var(--text-secondary); font-size: 0.85rem; cursor: pointer;">Show Cramming Focus:</label>
+            <input type="checkbox" id="cramToggle" style="width: auto; height: auto; cursor: pointer;">
+          </div>
+        </div>
+
+        <!-- Placeholder state -->
+        <div id="roadmapPlaceholder" class="empty-state">
+          <div class="icon">🗺️</div>
+          <h3>No Roadmap Generated Yet</h3>
+          <p>Fill out the parameters on the left and click "Generate Roadmap" to let Gemini map your daily learning path.</p>
+        </div>
+
+        <!-- Timeline list -->
+        <div id="roadmapList" class="timeline" style="display: none;"></div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- Backdrop -->
+  <div class="backdrop" id="backdrop"></div>
+
+  <!-- Quiz Drawer Modal -->
+  <div class="quiz-drawer" id="quizDrawer">
+    <h3 class="font-space mb-2" style="color: var(--cyan);" id="quizTitle">Verification Quiz</h3>
+    <p id="quizQuestion" style="font-size: 0.95rem; margin-bottom: 20px; line-height: 1.6; color: var(--text-primary);"></p>
+    <div id="quizOptions"></div>
+    <div style="margin-top: 25px; text-align: right;">
+      <button class="btn btn-secondary" onclick="closeQuiz()">Close</button>
+    </div>
+  </div>
+
+  <script>
+    const API_BASE_URL = 'http://localhost:5000/api';
+    let currentRoadmap = [];
+    let myUserId = null;
+    let userToken = null;
+
+    document.addEventListener('DOMContentLoaded', () => {
+        userToken = localStorage.getItem('token');
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
+        myUserId = user._id || user.id;
+
+        if (!userToken || !myUserId) {
+            window.location.href = '../auth/login.html';
+            return;
+        }
+
+        loadUserData();
+        animateParticles();
+        
+        document.getElementById('cramToggle').addEventListener('change', renderRoadmap);
+    });
+
+    // Particle Background
+    const canvas = document.getElementById("particles");
+    const ctx = canvas.getContext("2d");
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    let particles = [];
+    for (let i = 0; i < 40; i++) {
+        particles.push({
+            x: Math.random() * canvas.width,
+            y: Math.random() * canvas.height,
+            radius: Math.random() * 1.2,
+            dx: (Math.random() - 0.5) * 0.15,
+            dy: (Math.random() - 0.5) * 0.15
+        });
+    }
+    function animateParticles() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = "rgba(0, 245, 255, 0.25)";
+        particles.forEach(p => {
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+            ctx.fill();
+            p.x += p.dx;
+            p.y += p.dy;
+            if (p.x < 0 || p.x > canvas.width) p.dx *= -1;
+            if (p.y < 0 || p.y > canvas.height) p.dy *= -1;
+        });
+        requestAnimationFrame(animateParticles);
+    }
+    animateParticles();
+
+    // Fetch user details
+    async function loadUserData() {
+        try {
+            const res = await fetch(`${API_BASE_URL}/profile/${myUserId}`, {
+                headers: { 'Authorization': `Bearer ${userToken}` }
+            });
+            if (res.ok) {
+                const data = await res.json();
+                document.getElementById('xpVal').textContent = `${data.xp || 0} XP`;
+                document.getElementById('levelVal').textContent = `Level ${data.level || 1}`;
+                document.getElementById('streakVal').textContent = `🔥 ${data.streak || 0} Days`;
+                if (data.resumeText) document.getElementById('resumeText').value = data.resumeText;
+                if (data.targetRole) document.getElementById('targetRole').value = data.targetRole;
+                if (data.prepTimeFrame) document.getElementById('timeFrame').value = data.prepTimeFrame;
+            }
+        } catch (e) {
+            console.error('Error fetching user stats:', e);
+        }
+    }
+
+    // Submit Roadmap generation
+    document.getElementById('roadmapForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const targetRole = document.getElementById('targetRole').value;
+        const timeFrame = document.getElementById('timeFrame').value;
+        const resumeText = document.getElementById('resumeText').value;
+
+        const placeholder = document.getElementById('roadmapPlaceholder');
+        const list = document.getElementById('roadmapList');
+
+        placeholder.innerHTML = '<div class="icon skeleton" style="animation: shimmer 1.5s infinite; border-radius: 50%; width: 60px; height: 60px; margin: 0 auto 20px auto;"></div><h3>⚡ Generating Optimized Syllabus Roadmap...</h3><p style="margin-top:10px;">Gemini is currently analyzing your resume keywords and mapping key topic domains...</p>';
+        placeholder.style.display = 'block';
+        list.style.display = 'none';
+
+        try {
+            const res = await fetch(`${API_BASE_URL}/prep/generate-roadmap`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${userToken}`
+                },
+                body: JSON.stringify({ userId: myUserId, targetRole, timeFrame, resumeText })
+            });
+            const data = await res.json();
+            if (res.ok && data.roadmap) {
+                currentRoadmap = data.roadmap;
+                renderRoadmap();
+            } else {
+                placeholder.innerHTML = '<div class="icon">❌</div><h3>Generation Failed</h3><p style="color: var(--coral); margin-top:10px;">' + (data.message || 'Gemini API call limits reached.') + '</p>';
+            }
+        } catch (err) {
+            placeholder.innerHTML = '<div class="icon">⚠️</div><h3>Connection Error</h3><p style="color: var(--coral); margin-top:10px;">Could not connect to backend server. Make sure the server is active.</p>';
+        }
+    });
+
+    // Render roadmap timeline items
+    function renderRoadmap() {
+        const list = document.getElementById('roadmapList');
+        const placeholder = document.getElementById('roadmapPlaceholder');
+        const cramFilter = document.getElementById('cramToggle').checked;
+
+        if (currentRoadmap.length === 0) return;
+
+        placeholder.style.display = 'none';
+        list.style.display = 'block';
+        list.innerHTML = '';
+
+        // Filter high yield if cramming is selected
+        const displayed = cramFilter 
+            ? currentRoadmap.filter(item => ["DSA", "Aptitude", "OOP"].includes(item.category) || item.day % 2 !== 0)
+            : currentRoadmap;
+
+        displayed.forEach(item => {
+            const div = document.createElement('div');
+            div.className = 'timeline-item';
+            div.innerHTML = `
+                <div class="timeline-badge"></div>
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
+                    <div>
+                        <span class="timeline-category">${item.category}</span>
+                        <h3 style="color: var(--cyan); margin-top: 4px;">Day ${item.day}: ${item.title}</h3>
+                    </div>
+                    ${item.questions && item.questions.length > 0 ? `<button class="btn btn-secondary" onclick="takeQuiz(${item.day})" style="padding: 6px 12px; font-size: 0.75rem;">📝 Take Quiz</button>` : ''}
+                </div>
+                <p style="font-size: 0.9rem; color: var(--text-secondary); line-height: 1.5;">${item.description}</p>
+            `;
+            list.appendChild(div);
+        });
+    }
+
+    // Quiz Drawer handlers
+    let quizDay = 0;
+    let quizData = null;
+
+    function takeQuiz(day) {
+        quizDay = day;
+        const dayData = currentRoadmap.find(item => item.day === day);
+        if (!dayData || !dayData.questions || dayData.questions.length === 0) return;
+
+        quizData = dayData.questions[0]; // first question
+        document.getElementById('backdrop').style.display = 'block';
+        document.getElementById('quizDrawer').style.display = 'block';
+        document.getElementById('quizTitle').textContent = `Day ${quizDay} Verification`;
+        document.getElementById('quizQuestion').textContent = quizData.question;
+
+        const optionsContainer = document.getElementById('quizOptions');
+        optionsContainer.innerHTML = '';
+
+        quizData.options.forEach(opt => {
+            const btn = document.createElement('button');
+            btn.className = 'quiz-option';
+            btn.textContent = opt;
+            btn.onclick = () => selectOption(btn, opt);
+            optionsContainer.appendChild(btn);
+        });
+    }
+
+    async function selectOption(button, option) {
+        const options = document.querySelectorAll('.quiz-option');
+        options.forEach(opt => opt.disabled = true);
+
+        const isCorrect = option.trim() === quizData.answer.trim();
+        if (isCorrect) {
+            button.classList.add('correct');
+            // award XP
+            try {
+                const res = await fetch(`${API_BASE_URL}/prep/quiz-submit`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${userToken}`
+                    },
+                    body: JSON.stringify({ userId: myUserId, answersCorrect: 1, xpEarned: 25 })
+                });
+                if (res.ok) {
+                    const stats = await res.json();
+                    document.getElementById('xpVal').textContent = `${stats.xp} XP`;
+                    document.getElementById('levelVal').textContent = `Level ${stats.level}`;
+                    document.getElementById('streakVal').textContent = `🔥 ${stats.streak} Days`;
+                }
+            } catch (e) {
+                console.error('Error submitting quiz score', e);
+            }
+        } else {
+            button.classList.add('incorrect');
+            // Show correct choice
+            options.forEach(opt => {
+                if (opt.textContent.trim() === quizData.answer.trim()) {
+                    opt.classList.add('correct');
+                }
+            });
+        }
+    }
+
+    function closeQuiz() {
+        document.getElementById('backdrop').style.display = 'none';
+        document.getElementById('quizDrawer').style.display = 'none';
+    }
+
+    // Logout
+    document.getElementById('logoutBtn').addEventListener('click', (e) => {
+        e.preventDefault();
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        window.location.href = '../auth/login.html';
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Resume Optimizer - Phoenix</title>
+  <link rel="stylesheet" href="../phoenix.css">
+  <style>
+    .output-box {
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 25px;
+      min-height: 480px;
+      color: var(--text-primary);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.85rem;
+      white-space: pre-wrap;
+      overflow-y: auto;
+      margin-top: 15px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Navigation -->
+  <nav class="navbar">
+    <div class="navbar-brand" onclick="window.location.href='../dashboard/dashboard.html'">PHOENIX</div>
+    <ul class="nav-links">
+      <li><a href="../dashboard/dashboard.html">Dashboard</a></li>
+      <li class="nav-dropdown">
+        <a href="#" class="active">Prep Roadmap ▾</a>
+        <div class="nav-dropdown-content">
+          <a href="./roadmap.html">🗺️ Adaptive Syllabus</a>
+          <a href="./practice.html">💬 Mock Interview</a>
+          <a href="./resume.html">📝 Resume Optimizer</a>
+          <a href="./questions.html">🏷️ Company Questions</a>
+          <a href="./peer-match.html">👥 Peer Mock Matching</a>
+        </div>
+      </li>
+      <li class="nav-dropdown">
+        <a href="#">Hackathons ▾</a>
+        <div class="nav-dropdown-content">
+          <a href="../hackathon-agent/agent.html">🤖 Hack-Auto Agent</a>
+          <a href="../hackathon-agent/view.html">📋 Discovery Feed</a>
+          <a href="../hackathon-agent/team.html">👥 Team Roster</a>
+          <a href="../hackathon-agent/chat.html">💬 Discord War Room</a>
+          <a href="../hackathon-agent/portfolio.html">🏆 Portfolio Capture</a>
+        </div>
+      </li>
+      <li><a href="./planner.html">Planner</a></li>
+      <li><a href="../profile/profile.html">👤 Profile</a></li>
+      <li><a href="#" id="logoutBtn" style="color: var(--coral);">Logout</a></li>
+    </ul>
+  </nav>
+
+  <!-- Particle Background -->
+  <canvas id="particles"></canvas>
+
+  <div class="container">
+    
+    <div class="page-header">
+      <h1>Role-Based Resume Optimizer</h1>
+      <p>Optimize your current resume achievements against a specific target job description. Generate tailored, recruiter-ready Markdown structures.</p>
+    </div>
+
+    <div class="flex-row">
+      
+      <!-- INPUT PANEL SIDEBAR -->
+      <div class="col-sidebar" style="flex: 0 0 420px;">
+        <div class="glass-card">
+          <h3 class="font-space mb-2" style="font-size: 1.15rem;">Context Input</h3>
+          <form id="resumeForm" style="margin-top: 15px;">
+            <div class="form-group">
+              <label>Current Resume Details</label>
+              <textarea id="resumeText" placeholder="Paste your raw profile details (Skills, Projects, Education, etc.)..." rows="10" required></textarea>
+            </div>
+
+            <div class="form-group">
+              <label>Target Job Description</label>
+              <textarea id="jobDescription" placeholder="Paste the target job requirements or description..." rows="8" required></textarea>
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="width: 100%;">
+              ⚡ Optimize Resume
+            </button>
+          </form>
+        </div>
+      </div>
+
+      <!-- OUTPUT PREVIEW CARD -->
+      <div class="col-main">
+        <div class="glass-card">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <h2 class="font-space" style="font-size: 1.25rem;">Tailored Markdown Output</h2>
+            <div style="display: flex; gap: 8px;">
+              <button class="btn btn-secondary" onclick="copyResume()" style="padding: 6px 12px; font-size: 0.8rem;">📋 Copy</button>
+              <button class="btn btn-secondary" onclick="downloadResume()" style="padding: 6px 12px; font-size: 0.8rem;">💾 Download</button>
+            </div>
+          </div>
+          
+          <div class="output-box" id="outputContainer">Resume text will populate here in raw Markdown after analysis...</div>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <script>
+    const API_BASE_URL = 'http://localhost:5000/api';
+    let tailoredResumeText = "";
+    let userToken = null;
+
+    document.addEventListener('DOMContentLoaded', () => {
+        userToken = localStorage.getItem('token');
+        if (!userToken) {
+            window.location.href = '../auth/login.html';
+            return;
+        }
+
+        animateParticles();
+        
+        // Pre-populate resume if user has uploaded previously
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
+        const userId = user._id || user.id;
+        fetch(`${API_BASE_URL}/profile/${userId}`, {
+            headers: { 'Authorization': `Bearer ${userToken}` }
+        }).then(res => res.json()).then(data => {
+            if (data.resumeText) {
+                document.getElementById('resumeText').value = data.resumeText;
+            }
+        }).catch(err => console.warn(err));
+    });
+
+    // Particle Background
+    const canvas = document.getElementById("particles");
+    const ctx = canvas.getContext("2d");
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    let particles = [];
+    for (let i = 0; i < 40; i++) {
+        particles.push({
+            x: Math.random() * canvas.width,
+            y: Math.random() * canvas.height,
+            radius: Math.random() * 1.2,
+            dx: (Math.random() - 0.5) * 0.15,
+            dy: (Math.random() - 0.5) * 0.15
+        });
+    }
+    function animateParticles() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = "rgba(0, 245, 255, 0.25)";
+        particles.forEach(p => {
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+            ctx.fill();
+            p.x += p.dx;
+            p.y += p.dy;
+            if (p.x < 0 || p.x > canvas.width) p.dx *= -1;
+            if (p.y < 0 || p.y > canvas.height) p.dy *= -1;
+        });
+        requestAnimationFrame(animateParticles);
+    }
+    animateParticles();
+
+    // Form optimization trigger
+    document.getElementById('resumeForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const text = document.getElementById('resumeText').value;
+        const jd = document.getElementById('jobDescription').value;
+        const out = document.getElementById('outputContainer');
+
+        out.textContent = "⚡ Analysing resume alignment constraints...\n⚡ Injecting keywords and formatting to custom Markdown profile structure...";
+
+        try {
+            const res = await fetch(`${API_BASE_URL}/prep/tailor-resume`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${userToken}`
+                },
+                body: JSON.stringify({ resumeText: text, jobDescription: jd })
+            });
+            const data = await res.json();
+            if (res.ok && data.resume) {
+                tailoredResumeText = data.resume;
+                out.textContent = data.resume;
+            } else {
+                out.textContent = "❌ Failed to tailor resume: " + (data.message || "Unknown error occurred.");
+            }
+        } catch (err) {
+            out.textContent = "❌ Connection timeout. Check if Express server.js is active.";
+        }
+    });
+
+    function copyResume() {
+        if (!tailoredResumeText) {
+            alert("Please generate a tailored resume first!");
+            return;
+        }
+        navigator.clipboard.writeText(tailoredResumeText).then(() => {
+            alert("Markdown resume copied successfully!");
+        });
+    }
+
+    function downloadResume() {
+        if (!tailoredResumeText) {
+            alert("No tailored resume text to download!");
+            return;
+        }
+        const blob = new Blob([tailoredResumeText], { type: 'text/markdown' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'tailored_resume.md';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
+
+    // Logout
+    document.getElementById('logoutBtn').addEventListener('click', (e) => {
+        e.preventDefault();
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        window.location.href = '../auth/login.html';
+    });
+  </script>
+
+</body>
+</html>

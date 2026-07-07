@@ -1,0 +1,190 @@
+# Project 2: Hack-Auto Agent
+
+*(Autonomous Hackathon Discovery, Filtering, and Human-in-the-Loop Registration)*
+
+---
+
+## 1. Why It Is Being Created (The Problem Statement)
+
+In the high-velocity tech ecosystem, hackathons have evolved from casual weekend meetups into major pipelines for rapid prototyping, venture funding, and elite technical recruiting. However, developer teams consistently miss out on these career-defining opportunities due to three systemic administrative bottlenecks:
+
+* **The Fragmentation & Noise Problem:** Hackathon listings are chaotic and scattered. They are hosted across mainstream platforms (Devpost, HackerEarth, Unstop), municipal/government portals, regional community listings, and highly informal social media channels like Instagram and X. Manually monitoring dozens of feeds daily is a massive time sink.
+* **The Geographical Alignment Gap:** Most hackathon aggregators lack granular, hyper-local geographical filtering. For student developers or resource-constrained teams, traveling long distances is economically unfeasible. Finding out an event is happening only after reading through pages of rules, only to realize the venue is 1,000 kilometers away, results in severe "operational drag."
+
+
+* **The Registration Fatigue Trap:** When a viable hackathon is found, registering the team is an administrative headache. It requires repeatedly filling out forms for a 3-to-4 member team (entering names, university seat numbers (USNs), emails, phone numbers, and Git profiles) and manually uploading PDF resumes or college ID cards. Doing this dozens of times per semester leads to cognitive fatigue and missed deadlines.
+
+---
+
+## 2. What It Is Going to Solve (The Core Idea & Aim)
+
+The **Hack-Auto Agent** is an autonomous "Always-On" discovery and browser-orchestration engine. Its main objective is to completely automate the event lifecycle—from unstructured social discovery to final form-filling—while strictly preserving the team’s decision-making control through a **Human-in-the-Loop (HITL) gate**.
+
+```
++------------------+      +-------------------+      +-------------------+
+|  Daily Scrapers  |      |   n8n Workflow    |      |  Evolution API    |
+| (Instagram/SERP) +----->+   Orchestrator    +----->+  (WhatsApp Group) |
++------------------+      +---------+---------+      +---------+---------+
+                                    |                          |
+                             Geofence Match             Interactive Button
+                                    |                          |
+                                    v                          v
++------------------+      +---------+---------+      +---------+---------+
+| Puppeteer Node   |      | PostgreSQL/PostGIS|      | Team Lead Phone   |
+| (Docker + Xvfb)  |<-----+ Context Database  |<-----+ (Taps "Proceed")  |
++--------+---------+      +-------------------+      +-------------------+
+         |
+         | Form-Filling & PDF Uploads
+         v
++--------+---------+
+| Target Portal    |
+| (Pauses at Pay)  |
++------------------+
+
+```
+
+### Core Capabilities:
+
+1. **AI-Driven Social Parsing:** It uses web scrapers and vision-language models to extract structured event details directly from unstructured social media images and captions.
+2. **Geospatial Geofencing:** It uses real-time coordinate translation to programmatically filter out any events located outside a pre-configured boundary (e.g., a 30km or 300km radius from your base campus).
+3. **Webhook-Driven Mobile Handoff:** It bypasses expensive corporate notification APIs by using a self-hosted WhatsApp gateway to send interactive buttons directly to your team's group chat.
+4. **Autonomous Browser Orchestration:** Once approved, it uses a headful browser automation script on your server to navigate target portals, input multi-member variables, and natively upload PDF resumes, halting strictly at the payment or CAPTCHA screen.
+
+---
+
+## 3. Uniqueness & Overcoming Gaps in Existing Solutions
+
+Existing event discovery and automation tools are fundamentally limited:
+
+| Competitor Landscape | Platform Gaps & Limitations | How the Hack-Auto Agent Fixes It |
+| --- | --- | --- |
+| **Traditional Aggregators** *(Devpost, HackerEarth, Unstop)* | They are passive directories. They require you to log in, search manually, and fill out forms individually for every single hackathon.
+
+ | **Proactive Auto-Registration:** It actively hunts for events outside their platforms (like social media), filters them geographically, and automatically fills the forms for you. |
+| **Standard Automation Platforms** *(Zapier, Make.com)* | They are restricted to structured API triggers. They cannot parse unformatted Instagram flyer images, handle geospatial coordinates natively, or execute complex browser form-filling and PDF uploads.
+
+ | **Computer Vision + Headful Puppeteer:** It combines LLM-based image parsing with local headful Puppeteer execution inside a virtual display to bypass strict API limitations. |
+
+---
+
+## 4. Fully Detailed Tech Stack
+
+To construct this system without relying on proprietary, closed-source automation ecosystems, we build upon a self-hosted, scalable stack:
+
+* **Orchestration Core (n8n Self-Hosted):** Serves as the central workflow engine. Unlike Zapier, a self-hosted n8n instance allows for unlimited, complex execution paths, native JavaScript code execution blocks, and direct access to local filesystem paths.
+* **Database (PostgreSQL + PostGIS):** Storing spatial coordinates as geography types allows us to perform high-performance, mathematically accurate distance calculations on the earth's ellipsoid using native spatial indexes.
+* **Communication Bridge (Evolution API):** A self-hosted REST API that emulates the WhatsApp Web protocol. It allows the system to programmatically send interactive template buttons, images, and documents without Meta Business verification or per-message fees.
+* **Browser Automation (Node.js v25.8.1 + Puppeteer):** Puppeteer launches a headful browser instance on the server. By utilizing the latest ECMAScript Module (ESM) syntax native to Node v25.8.1, we ensure fast execution and modern packaging.
+* **Virtual Display Wrapper (Xvfb - X Virtual Framebuffer):** Since cloud virtual private servers (VPS) do not have a physical monitor, launching Puppeteer in `headless: false` mode would normally crash the script. Xvfb creates a simulated display buffer in system memory, tricking Chrome into thinking a physical screen is present.
+
+---
+
+## 5. Phase-by-Phase Technical Workflow
+
+### Phase 1: Instagram Scraping, Parsing, and Geofencing
+
+1. **Scrape:** A cron trigger in n8n executes daily, calling a scraping container to fetch recent posts from targeted Instagram hashtags (e.g., `#BangaloreHackathon`, `#KarnatakaCoders`).
+2. **Extract:** The unstructured caption and image URL are sent to a multimodal model node (e.g., Gemini 2.5 Flash). The model is instructed to return a strict JSON payload:
+```json
+{
+  "eventName": "GreenHack 2026",
+  "registrationUrl": "https://unstop.com/o/greenhack-2026",
+  "venueAddress": "1st Floor, No. 461, 17th Cross Rd, HSR Layout, Bengaluru"
+}
+
+```
+
+
+3. **Geocode:** n8n sends the `venueAddress` to a Geocoding API, receiving coordinate points: Latitude = 12.9102° N, Longitude = 77.6450° E.
+4. **Spatial Filter:** n8n executes a query against the local PostgreSQL database to calculate the geodesic distance from your campus base, SJCE/Mysuru (12.3129° N, 76.6135° E), using the Haversine formula:
+
+$$d = 2R \arcsin\left(\sqrt{\sin^2\left(\frac{\Delta \phi}{2}\right) + \cos(\phi_1)\cos(\phi_2)\sin^2\left(\frac{\Delta \lambda}{2}\right)}\right)$$
+
+
+
+Where R = 6371 km, \phi is latitude, and \lambda is longitude.
+In PostGIS, this is computed using ST_DWithin:
+```sql
+SELECT name FROM events 
+WHERE ST_DWithin(
+  geom, 
+  ST_MakePoint(76.6135, 12.3129)::geography, 
+  300000 -- 300km threshold
+);
+
+```
+
+
+If d > 300 km, the workflow immediately halts to avoid notifying the team of inaccessible events.
+
+### Phase 2: WhatsApp Interactive Handoff
+
+1. If the event passes the geofence check, n8n compiles a message payload.
+2. It sends an HTTP POST request to the self-hosted Evolution API.
+3. Evolution API transmits a rich message to your team's WhatsApp group containing the event flyer, extracted details, and an interactive quick-reply button:
+* **Button Text:** 🚀 Auto-Register Team
+* **Payload ID:** trigger_puppeteer_reg_greenhack2026
+
+
+4. When you tap the button, the Evolution API intercepts the click and sends an immediate inbound webhook back to n8n.
+
+### Phase 3: Headful Browser Auto-Filling & File Upload
+
+1. n8n receives the webhook, verifies the payload, and queries the PostgreSQL team_profiles table to pull the details of your 4-person team:
+```json
+{
+  "teamName": "Aegis-Devs",
+  "members":
+}
+
+```
+
+
+2. n8n triggers your local Node.js v25.8.1 Puppeteer script.
+3. To bypass headless detection blocks, Puppeteer launches in headful mode (headless: false) wrapped in an Xvfb display session on the server.
+4. The script locates input fields using robust, relative CSS selectors. For document uploads (which normally block standard keyboard automation), the script uses Puppeteer’s native file-chooser protocol:
+```javascript
+// Locating the file input element handle
+const fileInputHandle = await page.waitForSelector('input[type="file"]');
+// Uploading the PDF resume directly from the server path
+await fileInputHandle.uploadFile(member.resumePath);
+
+```
+
+
+5. Once all four members' text fields and resumes are successfully input, the script halts.
+6. It sends a final WhatsApp message to your group: "Form successfully filled! Browser is open at the payment screen. Please remote in via VNC to complete the security verification and transaction."
+
+---
+
+## 6. Concrete Real-World Use Case (Step-by-Step Example)
+
+### The Team Setup:
+
+* **Team Name:** Aegis-Devs (representing SJCE, Mysuru).
+* **Members:** Shashank, Vaibhav, Rajath, and Ullas.
+* **Base Location:** Mysuru (12.31°N, 76.61°E).
+
+### The Walkthrough:
+
+1. **08:00 AM - Discovery:** A student club in Bengaluru posts an Instagram flyer about "PromptX Hackathon".
+2. **08:02 AM - Distance Check:** The geocoder extracts the location "CMRIT, Bengaluru". The PostGIS database calculates the distance as 138.4 km. Since this is less than your 300km threshold, the alert is triggered.
+3. **08:03 AM - WhatsApp Notification:** Shashank receives a WhatsApp notification on his phone. It displays the "PromptX" poster and a button: 🚀 Auto-Register Team.
+4. **08:15 AM - Handoff:** Shashank taps the button. n8n catches the webhook and launches a Puppeteer instance inside a Docker container on your server.
+5. **08:16 AM - Automated Entry:** Puppeteer opens the Unstop registration portal. It bypasses anti-bot scripts using the stealth plugin, automatically logs into your team account, enters "Aegis-Devs" as the team name, maps the four members' details, and uploads their respective resumes directly from /app/docs/.
+6. **08:17 AM - Human Finish:** The script stops at the final "Pay ₹450 Fee" page. Shashank gets a WhatsApp message: "Form ready." He opens his laptop, logs into his VPS via a secure browser-VNC window, scans the UPI QR code on the screen with his phone, and completes the payment in under 10 seconds.
+
+---
+
+## 7. Future Scale & Features
+
+* **Cross-Platform Profile Synchronizer (A2A Identity Portal):** Implement the emerging Agent-to-Agent (A2A) protocol. This will allow the Hack-Auto Agent to securely query the personal agent of any guest developer you invite to join your team, dynamically fetching their verified resume, USN, and contact parameters on the fly, eliminating the need to maintain static JSON files.
+* **Multi-Model Solver (Dynamic Captcha Bypass):** Integrate an on-the-fly vision model routing step. If Puppeteer encounters a visual CAPTCHA block during registration, it will capture the screenshot, pass it to a specialized image-processing model to solve the puzzle, and automatically input the alphanumeric answer to complete the form without human intervention.
+
+
+
+---
+
+This is the complete, high-level blueprint and step-by-step implementation guide for Project 2: The Hack-Auto Agent.
+
+When you are ready, say "Continue" and we will proceed to Project 3: Autonomous ESG & Sustainable Sourcing Agent Network.

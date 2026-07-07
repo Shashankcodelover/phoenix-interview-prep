@@ -1,0 +1,79 @@
+# Master UI/UX Generation Prompt: Hack-Auto Agent (Light Theme Edition)
+
+*(Autonomous Hackathon Discovery, Filtering, and Human-in-the-Loop Registration)*
+
+Feed this highly detailed, professional, and visually stunning prompt into your AI design suite (e.g., Project IDX, Google AI Studio, v0.dev, or Bolt.new) to generate a complete, premium, responsive layout.
+
+---
+
+## Generator Prompt Specification
+
+Build a premium, responsive, and visually delightful web interface for "Hack-Auto Agent" utilizing a premium, modern Light Theme. The interface must include a dynamic initial Splash Screen Gateway that splits into three distinct role-based sub-systems (Admin Scraper, Team Coordinator, and Puppeteer Sandbox).
+
+### 1. AESTHETICS & EMOTIONAL SYSTEM THEME
+- **Visual Feel:** "Lightweight Agile Workspace." The UI should feel like a state-of-the-art modern dashboard for rapid development sprints—incredibly clean, active, and exciting. Translucent milky white glass panels, warm lavender accents, and electric teal indicators provide high legibility and clear, stress-free decision pathways.
+- **Color Palette (Light Glassmorphic):**
+  * Canvas Base Background: Soft Mint Cream (#f4fbf7)
+  * Panel Backgrounds: Milky Translucent Acrylic (rgba(255, 255, 255, 0.75))
+  * Borders: 1px thin outlines with pastel linear gradients (linear-gradient(135deg, rgba(168, 85, 247, 0.2), rgba(6, 182, 212, 0.15)))
+  * Primary Accent: Cyberpunk Purple (#a855f7)
+  * Secondary Discovery Accent: Electric Teal (#06b6d4)
+  * Geofence Alert Highlight: Sunset Coral (#f43f5e)
+  * Success Indicators: Acid Green (#22c55e)
+  * Muted Details: Soft Slate Grey (#64748b)
+- **Glassmorphic Filter:** `backdrop-filter: blur(14px)`
+- **Filters & Shadows:** box-shadow: `0 8px 32px rgba(100, 116, 139, 0.05)`.
+- **Typography:** Space Grotesk (headers and map metrics), Inter (general listings and grids).
+
+---
+
+### 2. DYNAMIC INITIAL SPLASH SCREEN (THE ROLE GATEWAY)
+- **Desktop & Mobile Layout:** Centered single-column layout on a soft purple-teal radial background gradient.
+- **Title Block:** "Aegis Hack-Auto Agent" in bold Cyberpunk Purple text, with a dynamic floating computer mouse/globe graphics icon.
+- **The Role Selection Grid:** A horizontal row of three large, high-fidelity frosted cards (spanning 4 columns each on desktop; stacking vertically on mobile). Each card has:
+  * **Card 1: "Team Coordinator"**
+    * Accent: Electric Teal border highlight.
+    * Text: "Register your 4-person team profile, upload verified PDF resumes, configure geofence radius limits, and trigger registrations."
+    * Action Button: "Access Coordinator Deck" - Electric Teal background, white text, padding: 12px 20px, hover: scale(1.03) with soft teal glow.
+  * **Card 2: "Puppeteer Sandbox"**
+    * Accent: Cyberpunk Purple border highlight.
+    * Text: "Monitor headful Puppeteer automation browser runs, review Xvfb framebuffers, inspect form-filling elements, and solve CAPTCHAs."
+    * Action Button: "Enter Sandbox Monitor" - Cyberpunk Purple background, white text, padding: 12px 20px, hover: scale(1.03) with soft purple glow.
+  * **Card 3: "Admin Scraper Deck"**
+    * Accent: Sunset Coral border highlight.
+    * Text: "Query daily hashtag scrapers, inspect geocoding PostGIS queries, monitor self-hosted n8n webhooks, and audit logs."
+    * Action Button: "Access Scraper Command" - Sunset Coral background, white text, padding: 12px 20px, hover: scale(1.03) with soft red glow.
+
+---
+
+### 3. ROLE-BASED UI/UX BOARDS (POST-LOGIN PATHS)
+
+#### A. THE ADMIN SCRAPER DECK (POST-LOGIN ROLE: ADMIN SCRAPER)
+- **Layout Grid:** 12-column grid. Left Navigation Sidebar: 3 columns. Center Data Hub: 9 columns. Inner padding: p-6 (24px). Gap: 20px.
+- **Controls & Widgets:**
+  - **Daily Scraper Monitor:** Frosted table displaying target hashtags (#BangaloreHackathon, #KarnatakaCoders), scrapers schedules, and JSON data.
+  - **Geocoding & PostGIS Radar:** Display table mapping venue addresses to geographic coordinates (lat, lng) using the Haversine equation.
+  - **n8n Webhook Manager:** Log console listing active webhooks triggered from the WhatsApp communication bridge.
+
+#### B. THE TEAM COORDINATOR PORTAL (POST-LOGIN ROLE: TEAM COORDINATOR)
+- **Layout Grid:** 12-column grid. Sidebar (Geofence limits): 4 columns. Main Stage (Team profiles): 8 columns. Inner padding: p-8 (32px).
+- **Controls & Widgets:**
+  - **Geofence Radius Configurator:** Sliding control to set the geodesic distance threshold (e.g., 300km) from your base campus.
+  - **Team Roster Matrix:** 4 separate frosted cards displaying team member profiles: Name, USN, Email, and resume PDF upload slots (dotted purple borders).
+  - **Action Button:** "Save Team Profile" (Electric Teal background, padding: 12px 24px, white text).
+
+#### C. THE PUPPETEER SANDBOX MONITOR (POST-LOGIN ROLE: PUPPETEER OPERATOR)
+- **Layout Grid:** Stacked double-column display.
+  - Left Panel (Xvfb Virtual Display Buffer): 7 columns.
+  - Right Panel (Registration Telemetry Console): 5 columns. Inner padding: p-6 (24px).
+- **Controls & Widgets:**
+  - **Xvfb Browser Viewer:** Visual browser frame showcasing Chrome navigating the target Unstop registration form in real-time, filling fields, and uploading PDF resumes.
+  - **Auto-Fill Progress Logger:** Real-time monospace text stream: *Selector: input[type='file'], Status: Uploading Shashank_Resume.pdf...* with sliding animation overlays.
+  - **Handoff Intercept Alert:** High-impact flashing banner: *REGISTRATION WAITING FOR HUMAN INTERVENTION (PAYMENT/CAPTCHA)*.
+  - **Remote VNC Access:** Floating visual button "Launch Secure VNC Screen" (Sunset Coral background) to remote into the virtual browser session to complete the transaction.
+
+---
+
+### 4. FUTURE EXPANSIONS & STRATEGIES
+- **A2A Identity Portal Integration:** A toggle switch: "A2A Identity Sync" - allowing the system to query external classmate agents to dynamically fetch profiles.
+- **Multi-Model CAPTCHA Solver:** Embedded log terminal detailing active solver scripts attempting to bypass security obstacles.

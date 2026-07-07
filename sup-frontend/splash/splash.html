@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PHOENIX — Interview Prep × Hackathon Discovery × Career Acceleration</title>
+  <meta name="description" content="Phoenix is the unified platform for interview preparation, hackathon discovery, and career acceleration for engineering students.">
+  <link rel="stylesheet" href="../phoenix.css">
+  <style>
+    body {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      overflow: hidden;
+    }
+
+    /* Animated gradient orbs */
+    .orb {
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(100px);
+      opacity: 0.4;
+      animation: orbFloat 8s ease-in-out infinite;
+    }
+
+    .orb-1 {
+      width: 400px;
+      height: 400px;
+      background: radial-gradient(circle, rgba(123,47,247,0.4), transparent 70%);
+      top: -100px;
+      left: -100px;
+      animation-delay: 0s;
+    }
+
+    .orb-2 {
+      width: 350px;
+      height: 350px;
+      background: radial-gradient(circle, rgba(0,245,255,0.3), transparent 70%);
+      bottom: -80px;
+      right: -80px;
+      animation-delay: -3s;
+    }
+
+    .orb-3 {
+      width: 250px;
+      height: 250px;
+      background: radial-gradient(circle, rgba(244,63,94,0.25), transparent 70%);
+      top: 50%;
+      right: 20%;
+      animation-delay: -5s;
+    }
+
+    @keyframes orbFloat {
+      0%, 100% { transform: translate(0, 0) scale(1); }
+      25% { transform: translate(30px, -20px) scale(1.05); }
+      50% { transform: translate(-20px, 30px) scale(0.95); }
+      75% { transform: translate(15px, 15px) scale(1.02); }
+    }
+
+    /* Splash Container */
+    .splash-scene {
+      position: relative;
+      z-index: 10;
+      text-align: center;
+      max-width: 700px;
+      padding: 0 24px;
+      animation: sceneReveal 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      opacity: 0;
+    }
+
+    @keyframes sceneReveal {
+      from { opacity: 0; transform: translateY(40px) scale(0.95); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    /* Glow Ring */
+    .glow-ring {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      margin: 0 auto 30px;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .glow-ring::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      border: 2px solid transparent;
+      background: linear-gradient(135deg, var(--cyan), var(--purple), var(--coral)) border-box;
+      -webkit-mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0);
+      -webkit-mask-composite: xor;
+      mask-composite: exclude;
+      animation: ringRotate 4s linear infinite;
+    }
+
+    .glow-ring::after {
+      content: '🔥';
+      font-size: 3rem;
+      animation: iconPulse 2s ease-in-out infinite;
+    }
+
+    @keyframes ringRotate {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    @keyframes iconPulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.15); }
+    }
+
+    /* Logo */
+    .logo {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 4rem;
+      font-weight: 700;
+      letter-spacing: 8px;
+      background: linear-gradient(135deg, #00f5ff 0%, #7b2ff7 50%, #f43f5e 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 12px;
+      text-shadow: none;
+      animation: logoGlow 3s ease-in-out infinite alternate;
+    }
+
+    @keyframes logoGlow {
+      from { filter: drop-shadow(0 0 20px rgba(0,245,255,0.2)); }
+      to { filter: drop-shadow(0 0 30px rgba(123,47,247,0.3)); }
+    }
+
+    .tagline {
+      font-size: 1.05rem;
+      color: var(--text-secondary);
+      margin-bottom: 40px;
+      font-weight: 400;
+      letter-spacing: 0.5px;
+    }
+
+    /* Feature Highlights */
+    .features-row {
+      display: flex;
+      gap: 16px;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-bottom: 45px;
+    }
+
+    .feature-chip {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--border-subtle);
+      border-radius: 50px;
+      padding: 10px 20px;
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: var(--transition-fast);
+      cursor: default;
+    }
+
+    .feature-chip:hover {
+      background: rgba(0, 245, 255, 0.06);
+      border-color: rgba(0, 245, 255, 0.2);
+      color: var(--cyan);
+      transform: translateY(-2px);
+    }
+
+    .feature-chip .dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+    }
+
+    .dot-cyan { background: var(--cyan); }
+    .dot-purple { background: var(--purple); }
+    .dot-coral { background: var(--coral); }
+
+    /* Enter Button */
+    #enterBtn {
+      padding: 14px 48px;
+      font-size: 1rem;
+      font-weight: 600;
+      font-family: 'Space Grotesk', sans-serif;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      background: linear-gradient(135deg, var(--cyan), var(--purple));
+      color: #fff;
+      border: none;
+      border-radius: 50px;
+      cursor: pointer;
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 0 4px 25px rgba(0, 245, 255, 0.25), 0 0 60px rgba(123, 47, 247, 0.1);
+      position: relative;
+      overflow: hidden;
+    }
+
+    #enterBtn::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 0;
+      height: 0;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+      transition: width 0.6s, height 0.6s;
+    }
+
+    #enterBtn:hover {
+      transform: translateY(-3px) scale(1.03);
+      box-shadow: 0 8px 40px rgba(0, 245, 255, 0.35), 0 0 80px rgba(123, 47, 247, 0.15);
+    }
+
+    #enterBtn:hover::before {
+      width: 300px;
+      height: 300px;
+    }
+
+    #enterBtn:active {
+      transform: translateY(0) scale(0.98);
+    }
+
+    /* Version Tag */
+    .version-tag {
+      margin-top: 30px;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      letter-spacing: 1px;
+    }
+  </style>
+</head>
+<body>
+  <!-- Animated Orbs -->
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+  <div class="orb orb-3"></div>
+
+  <!-- Particle Canvas -->
+  <canvas id="particles"></canvas>
+
+  <!-- Splash Scene -->
+  <div class="splash-scene">
+    <div class="glow-ring"></div>
+
+    <h1 class="logo">PHOENIX</h1>
+    <p class="tagline">Interview Prep × Hackathon Discovery × Career Acceleration</p>
+
+    <div class="features-row">
+      <div class="feature-chip">
+        <span class="dot dot-cyan"></span>
+        AI Roadmap Engine
+      </div>
+      <div class="feature-chip">
+        <span class="dot dot-purple"></span>
+        Hack-Auto Agent
+      </div>
+      <div class="feature-chip">
+        <span class="dot dot-coral"></span>
+        War Room Collab
+      </div>
+    </div>
+
+    <button id="enterBtn">Enter Platform</button>
+
+    <p class="version-tag">Phoenix v2.0 — Built for Builders</p>
+  </div>
+
+  <script>
+    // Particle Animation
+    const canvas = document.getElementById('particles');
+    const ctx = canvas.getContext('2d');
+
+    function resize() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    resize();
+    window.addEventListener('resize', resize);
+
+    const particles = [];
+    for (let i = 0; i < 80; i++) {
+      particles.push({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        radius: Math.random() * 1.5 + 0.3,
+        dx: (Math.random() - 0.5) * 0.3,
+        dy: (Math.random() - 0.5) * 0.3,
+        opacity: Math.random() * 0.4 + 0.1
+      });
+    }
+
+    function drawParticles() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      particles.forEach(p => {
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(0, 245, 255, ${p.opacity})`;
+        ctx.fill();
+
+        p.x += p.dx;
+        p.y += p.dy;
+
+        if (p.x < 0 || p.x > canvas.width) p.dx *= -1;
+        if (p.y < 0 || p.y > canvas.height) p.dy *= -1;
+      });
+
+      // Draw connections
+      for (let i = 0; i < particles.length; i++) {
+        for (let j = i + 1; j < particles.length; j++) {
+          const dist = Math.hypot(particles[i].x - particles[j].x, particles[i].y - particles[j].y);
+          if (dist < 120) {
+            ctx.beginPath();
+            ctx.moveTo(particles[i].x, particles[i].y);
+            ctx.lineTo(particles[j].x, particles[j].y);
+            ctx.strokeStyle = `rgba(0, 245, 255, ${0.06 * (1 - dist / 120)})`;
+            ctx.lineWidth = 0.5;
+            ctx.stroke();
+          }
+        }
+      }
+
+      requestAnimationFrame(drawParticles);
+    }
+    drawParticles();
+
+    // Navigate to login
+    document.getElementById('enterBtn').addEventListener('click', () => {
+      document.querySelector('.splash-scene').style.animation = 'sceneExit 0.5s ease forwards';
+      setTimeout(() => {
+        window.location.href = '../auth/login.html';
+      }, 450);
+    });
+
+    // Add exit animation
+    const style = document.createElement('style');
+    style.textContent = `
+      @keyframes sceneExit {
+        to { opacity: 0; transform: translateY(-30px) scale(1.05); }
+      }
+    `;
+    document.head.appendChild(style);
+  </script>
+</body>
+</html>

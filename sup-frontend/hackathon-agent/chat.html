@@ -1,0 +1,1172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Phoenix — Teammate Hackathon War Room</title>
+  <link rel="stylesheet" href="../phoenix.css">
+  <style>
+    /* Discord layout wrapper overrides */
+    body {
+      overflow: hidden;
+      height: 100vh;
+    }
+
+    .discord-wrapper {
+      display: grid;
+      grid-template-columns: 80px 240px 1fr 280px;
+      height: calc(100vh - 64px);
+      background: #06060c;
+    }
+
+    /* Left Sidebar: Hackathon Badges */
+    .discord-servers {
+      background: #030307;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 15px 0;
+      gap: 12px;
+      border-right: 1px solid var(--border-subtle);
+      overflow-y: auto;
+    }
+
+    .server-icon {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--border-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Space Grotesk', sans-serif;
+      font-weight: 700;
+      font-size: 1.1rem;
+      color: var(--text-secondary);
+      cursor: pointer;
+      position: relative;
+      transition: var(--transition-spring);
+    }
+
+    .server-icon:hover, .server-icon.active {
+      border-radius: 16px;
+      background: var(--gradient-brand);
+      color: #fff;
+      box-shadow: var(--shadow-glow-cyan);
+    }
+
+    .server-icon::before {
+      content: '';
+      position: absolute;
+      left: -8px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 4px;
+      height: 0;
+      background: var(--cyan);
+      border-radius: 0 4px 4px 0;
+      transition: var(--transition-fast);
+    }
+
+    .server-icon.active::before, .server-icon:hover::before {
+      height: 24px;
+    }
+
+    /* Channels Sidebar */
+    .discord-channels {
+      background: #080811;
+      display: flex;
+      flex-direction: column;
+      border-right: 1px solid var(--border-subtle);
+      padding: 20px 10px;
+      justify-content: space-between;
+    }
+
+    .channels-header {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      padding-bottom: 15px;
+      border-bottom: 1px solid var(--border-subtle);
+      margin-bottom: 20px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .channel-section {
+      margin-bottom: 24px;
+    }
+
+    .channel-section-title {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 8px;
+    }
+
+    .channel-link {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border-radius: var(--radius-sm);
+      font-size: 0.88rem;
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: var(--transition-fast);
+      margin-bottom: 4px;
+    }
+
+    .channel-link:hover {
+      background: rgba(255, 255, 255, 0.03);
+      color: var(--text-primary);
+    }
+
+    .channel-link.active {
+      background: rgba(0, 245, 255, 0.08);
+      color: var(--cyan);
+      font-weight: 600;
+    }
+
+    /* Voice state bottom widget */
+    .voice-status-panel {
+      background: rgba(0, 0, 0, 0.25);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .voice-status-info {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .voice-status-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--green);
+      animation: pulseGreen 1.5s infinite;
+    }
+
+    @keyframes pulseGreen {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+
+    /* Main Chat Center */
+    .discord-chat {
+      display: flex;
+      flex-direction: column;
+      background: #0a0a14;
+      height: 100%;
+    }
+
+    .chat-header {
+      padding: 16px 24px;
+      border-bottom: 1px solid var(--border-subtle);
+      background: rgba(8, 8, 17, 0.4);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .chat-header h3 {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 1.1rem;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* Announcements timeline styles */
+    .announcement-timeline {
+      padding: 30px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      height: 100%;
+      overflow-y: auto;
+    }
+
+    .timeline-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      transition: var(--transition-smooth);
+      position: relative;
+    }
+
+    .timeline-card:hover {
+      background: var(--bg-card-hover);
+      border-color: rgba(255, 138, 0, 0.2);
+    }
+
+    .timeline-card.urgent {
+      border-color: rgba(244, 63, 94, 0.3);
+    }
+
+    .timeline-card.urgent::before {
+      content: 'CRITICAL';
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      font-size: 0.65rem;
+      font-weight: 700;
+      color: var(--coral);
+      border: 1px solid rgba(244, 63, 94, 0.4);
+      padding: 2px 8px;
+      border-radius: 50px;
+      background: rgba(244, 63, 94, 0.1);
+      letter-spacing: 1px;
+    }
+
+    /* Right Sidebar: Teammates & Invites */
+    .discord-members {
+      background: #080811;
+      border-left: 1px solid var(--border-subtle);
+      padding: 20px 15px;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+      overflow-y: auto;
+    }
+
+    .member-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+
+    .member-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.9rem;
+      font-weight: 600;
+    }
+
+    .member-status {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--green);
+    }
+
+    .member-status.offline {
+      background: var(--text-muted);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Navigation -->
+  <nav class="navbar">
+    <div class="navbar-brand" onclick="window.location.href='../dashboard/dashboard.html'">PHOENIX</div>
+    <ul class="nav-links">
+      <li><a href="../dashboard/dashboard.html">Dashboard</a></li>
+      <li class="nav-dropdown">
+        <a href="#">Prep Roadmap ▾</a>
+        <div class="nav-dropdown-content">
+          <a href="../interview-prep/roadmap.html">🗺️ Adaptive Syllabus</a>
+          <a href="../interview-prep/practice.html">💬 Mock Interview</a>
+          <a href="../interview-prep/resume.html">📝 Resume Optimizer</a>
+          <a href="../interview-prep/questions.html">🏷️ Company Questions</a>
+          <a href="../interview-prep/peer-match.html">👥 Peer Mock Matching</a>
+        </div>
+      </li>
+      <li class="nav-dropdown">
+        <a href="#" class="active">Hackathons ▾</a>
+        <div class="nav-dropdown-content">
+          <a href="./agent.html">🤖 Hack-Auto Agent</a>
+          <a href="./view.html">📋 Discovery Feed</a>
+          <a href="./team.html">👥 Team Roster</a>
+          <a href="./chat.html">💬 Discord War Room</a>
+          <a href="./portfolio.html">🏆 Portfolio Capture</a>
+        </div>
+      </li>
+      <li><a href="../interview-prep/planner.html">Planner</a></li>
+      <li><a href="../profile/profile.html">👤 Profile</a></li>
+      <li><a href="#" id="logoutBtn" style="color: var(--coral);">Logout</a></li>
+    </ul>
+  </nav>
+
+  <!-- Discord Workspace Wrapper -->
+  <div class="discord-wrapper">
+    
+    <!-- LEFTMOST SIDEBAR: Hackathon selection list -->
+    <div class="discord-servers" id="hackathonBadgeList">
+      <!-- Icon items loaded dynamically -->
+      <div class="server-icon active" data-tooltip="General Hub">🏁</div>
+    </div>
+
+    <!-- MIDDLE CHANNELS SIDEBAR -->
+    <div class="discord-channels">
+      <div>
+        <div class="channels-header" id="currentHackathonTitle">Phoenix Lounge</div>
+        
+        <!-- Text channels -->
+        <div class="channel-section">
+          <div class="channel-section-title">
+            <span>Text Channels</span>
+          </div>
+          <div class="channel-link active" onclick="switchChannel('general')" id="chan-general">
+            <span>#</span> general-chat
+          </div>
+          <div class="channel-link" onclick="switchChannel('announcements')" id="chan-announcements">
+            <span>📢</span> announcements
+          </div>
+          <div class="channel-link" onclick="switchChannel('ideas')" id="chan-ideas">
+            <span>💡</span> collaborative-ideas
+          </div>
+        </div>
+
+        <!-- Voice channels -->
+        <div class="channel-section">
+          <div class="channel-section-title">
+            <span>Voice Channels</span>
+          </div>
+          <div class="channel-link" onclick="toggleVoiceConnection()" id="chan-voice">
+            <span>🔊</span> Teammates Lounge
+          </div>
+          <!-- In-call active participants display -->
+          <div id="voiceConnectedUsers" style="display: none; padding-left: 20px; font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 8px;">
+            <div class="member-row mt-1" style="margin-bottom: 4px;">
+              <span class="voice-status-dot"></span>
+              <span>You (Connected)</span>
+            </div>
+            <div class="member-row" style="margin-bottom: 4px;">
+              <span style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: var(--green);"></span>
+              <span>Bob Smith (Speaking)</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Voice Lounge Control Action Panel -->
+      <div class="voice-status-panel" id="voiceControlPanel" style="display: none;">
+        <div class="voice-status-info">
+          <span class="voice-status-dot"></span>
+          <div>
+            <strong style="color: var(--green); font-size: 0.8rem; display: block;">Voice Connected</strong>
+            <span style="font-size: 0.7rem; color: var(--text-secondary);">RTC Link Quality: 14ms</span>
+          </div>
+        </div>
+        <div style="display: flex; gap: 8px; margin-top: 5px;">
+          <button class="btn btn-primary" onclick="generateGoogleMeetLink()" style="flex: 1; padding: 6px 12px; font-size: 0.75rem; background: linear-gradient(135deg, var(--green), #06b6d4);">
+            🎥 Share Screen
+          </button>
+          <button class="btn btn-danger" onclick="toggleVoiceConnection()" style="padding: 6px 10px; font-size: 0.75rem;">
+            Disconnect
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MAIN CHAT PANEL -->
+    <div class="discord-chat">
+      
+      <!-- Chat Header -->
+      <div class="chat-header">
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <h3 id="currentChannelName" style="margin: 0;"># general-chat</h3>
+          <span class="badge badge-cyan" id="currentRoleBadge">Teammate</span>
+        </div>
+        <button class="btn btn-primary" onclick="generateGoogleMeetLink()" style="font-size: 0.75rem; padding: 6px 12px; background: linear-gradient(135deg, var(--green), #06b6d4); display: flex; align-items: center; gap: 6px;">
+          🎥 Start Google Meet
+        </button>
+      </div>
+
+      <!-- TEXT CHANNEL VIEW -->
+      <div id="textChatContainer" class="chat-messages" style="flex: 1; overflow-y: auto;">
+        <div class="message message-system">
+          Welcome to the #general-chat channel! Talk with your colleagues, coordinate roles, and prepare your hackathon submissions.
+        </div>
+      </div>
+
+      <!-- ANNOUNCEMENTS CHANNEL VIEW (Timelines & Deadlines) -->
+      <div id="announcementsContainer" class="announcement-timeline" style="display: none;">
+        <!-- Timeline items populate here -->
+      </div>
+
+      <!-- COLLABORATIVE IDEAS SANDBOX VIEW -->
+      <div id="ideasContainer" style="display: none; flex: 1; flex-direction: column; overflow-y: auto; padding: 24px; gap: 20px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-subtle); padding-bottom: 16px; margin-bottom: 10px;">
+          <div>
+            <h2 class="font-space" style="font-size: 1.3rem; color: var(--cyan); margin: 0;">💡 Collaborative Idea Sandbox</h2>
+            <p style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 4px;">Submit project proposals, upvote concepts, and check novelty using AI.</p>
+          </div>
+          <button class="btn btn-primary" onclick="openPitchIdeaModal()" style="font-size: 0.8rem; padding: 8px 16px;">➕ Pitch New Idea</button>
+        </div>
+        <div id="ideasList" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px;">
+          <p style="color: var(--text-muted); font-size: 0.85rem; text-align: center; grid-column: 1 / -1; padding: 40px 0;">No ideas pitched yet. Click "Pitch New Idea" to start brainstorming!</p>
+        </div>
+      </div>
+
+      <!-- Input Field Box -->
+      <form id="chatForm" class="chat-input-area">
+        <input type="text" id="chatInput" placeholder="Type a message inside channel..." autocomplete="off">
+        <input type="file" id="attachmentInput" style="display: none;" multiple>
+        <button type="button" class="btn btn-secondary" onclick="document.getElementById('attachmentInput').click()" style="padding: 10px 14px;">📎</button>
+        <button type="submit" class="btn btn-primary" id="sendBtn">Send 🚀</button>
+      </form>
+    </div>
+
+    <!-- RIGHT SIDEBAR: Teammates & Platform User Invites -->
+    <div class="discord-members">
+      
+      <!-- Active members list -->
+      <div>
+        <h4 class="font-space" style="font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px;">Active Members</h4>
+        <div id="activeMembersList">
+          <!-- Populated from backend team -->
+        </div>
+      </div>
+
+      <!-- Friends Invite List -->
+      <div>
+        <h4 class="font-space" style="font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px;">Invite Platform Peers</h4>
+        <div id="invitePeersContainer" style="display: flex; flex-direction: column; gap: 8px;">
+          <!-- Loaded users -->
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <script>
+    const API_BASE_URL = 'http://localhost:5000/api';
+    let conversationId = null;
+    let selectedHackathonId = null;
+    let currentChannel = 'general'; // general, announcements
+    let myUserId = null;
+    let userToken = null;
+    let activeTeam = null;
+
+    document.addEventListener('DOMContentLoaded', () => {
+        userToken = localStorage.getItem('token');
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
+        myUserId = user._id || user.id;
+
+        if (!userToken || !myUserId) {
+            window.location.href = '../auth/login.html';
+            return;
+        }
+
+        loadHackathons();
+        loadAllUsers();
+        document.getElementById('chatForm').addEventListener('submit', sendMessage);
+    });
+
+    // Logout
+    document.getElementById('logoutBtn').addEventListener('click', (e) => {
+        e.preventDefault();
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        window.location.href = '../auth/login.html';
+    });
+
+    // Switch channels
+    function switchChannel(type) {
+        currentChannel = type;
+        document.getElementById('chan-general').classList.remove('active');
+        document.getElementById('chan-announcements').classList.remove('active');
+        document.getElementById('chan-ideas').classList.remove('active');
+        
+        const chatForm = document.getElementById('chatForm');
+        
+        if (type === 'general') {
+            document.getElementById('chan-general').classList.add('active');
+            document.getElementById('currentChannelName').textContent = '# general-chat';
+            document.getElementById('textChatContainer').style.display = 'flex';
+            document.getElementById('announcementsContainer').style.display = 'none';
+            document.getElementById('ideasContainer').style.display = 'none';
+            chatForm.style.display = 'flex';
+            fetchMessages();
+        } else if (type === 'announcements') {
+            document.getElementById('chan-announcements').classList.add('active');
+            document.getElementById('currentChannelName').textContent = '📢 announcements';
+            document.getElementById('textChatContainer').style.display = 'none';
+            document.getElementById('announcementsContainer').style.display = 'flex';
+            document.getElementById('ideasContainer').style.display = 'none';
+            chatForm.style.display = 'none';
+            renderAnnouncements();
+        } else if (type === 'ideas') {
+            document.getElementById('chan-ideas').classList.add('active');
+            document.getElementById('currentChannelName').textContent = '💡 collaborative-ideas';
+            document.getElementById('textChatContainer').style.display = 'none';
+            document.getElementById('announcementsContainer').style.display = 'none';
+            document.getElementById('ideasContainer').style.display = 'flex';
+            chatForm.style.display = 'none';
+            loadPitchedIdeas();
+        }
+    }
+
+    // Toggle simulated voice Lounge connection
+    function toggleVoiceConnection() {
+        const chanVoice = document.getElementById('chan-voice');
+        const voiceUsers = document.getElementById('voiceConnectedUsers');
+        const controlPanel = document.getElementById('voiceControlPanel');
+
+        if (chanVoice.classList.contains('active')) {
+            // disconnect
+            chanVoice.classList.remove('active');
+            voiceUsers.style.display = 'none';
+            controlPanel.style.display = 'none';
+        } else {
+            // connect
+            chanVoice.classList.add('active');
+            voiceUsers.style.display = 'block';
+            controlPanel.style.display = 'flex';
+            
+            // Post notification to chat
+            appendLocalSystemMsg("🎙️ You entered Teammates Lounge. Start screen sharing using Google Meet.");
+        }
+    }
+
+    // Generate Google Meet link and auto-post to chat
+    async function generateGoogleMeetLink() {
+        const keys = ['xyz-abc-def', 'pqrs-uvw-xyz', 'meet-js-campus', 'google-screen-share'];
+        const randomKey = keys[Math.floor(Math.random() * keys.length)];
+        const meetLink = `https://meet.google.com/${randomKey}`;
+
+        // Send to backend
+        try {
+            const res = await fetch(`${API_BASE_URL}/chat/message`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${userToken}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    conversationId: conversationId,
+                    senderId: myUserId,
+                    text: `🚀 Live screen sharing started in voice channel. Click to join: ${meetLink}`
+                })
+            });
+            if (res.ok) {
+                fetchMessages();
+                // open in new tab
+                window.open(meetLink, '_blank');
+            }
+        } catch (e) {
+            console.error('Meet link generation failed', e);
+        }
+    }
+
+    function appendLocalSystemMsg(txt) {
+        const container = document.getElementById('textChatContainer');
+        const div = document.createElement('div');
+        div.className = 'message message-system';
+        div.textContent = txt;
+        container.appendChild(div);
+        container.scrollTop = container.scrollHeight;
+    }
+
+    // Load active hackathons
+    async function loadHackathons() {
+        try {
+            const res = await fetch(`${API_BASE_URL}/hackathons`, {
+                headers: { 'Authorization': `Bearer ${userToken}` }
+            });
+            if (res.ok) {
+                const hackathons = await res.json();
+                const list = document.getElementById('hackathonBadgeList');
+                list.innerHTML = '';
+
+                hackathons.forEach((h, idx) => {
+                    const badge = document.createElement('div');
+                    badge.className = 'server-icon' + (idx === 0 ? ' active' : '');
+                    badge.dataset.id = h._id;
+                    badge.dataset.name = h.name;
+                    badge.dataset.desc = h.description;
+                    badge.dataset.date = h.date;
+                    badge.dataset.link = h.hostingLink;
+                    // Initials for icon
+                    badge.textContent = h.name.split(' ').map(w => w[0]).join('').substring(0, 3).toUpperCase();
+                    
+                    // tooltip
+                    badge.dataset.tooltip = h.name;
+                    badge.onclick = () => selectHackathon(badge);
+                    list.appendChild(badge);
+                });
+
+                if (hackathons.length > 0) {
+                    // Select first
+                    selectHackathon(list.firstChild);
+                }
+            }
+        } catch (e) {
+            console.error(e);
+        }
+    }
+
+    async function selectHackathon(element) {
+        document.querySelectorAll('.server-icon').forEach(e => e.classList.remove('active'));
+        element.classList.add('active');
+
+        selectedHackathonId = element.dataset.id;
+        document.getElementById('currentHackathonTitle').textContent = element.dataset.name;
+
+        // Retrieve or create the group conversation for this hackathon
+        // We find or create a group conversation involving all team members
+        await loadTeamAndConversation();
+        renderAnnouncements();
+    }
+
+    async function loadTeamAndConversation() {
+        try {
+            // Find active team for this hackathon
+            const res = await fetch(`${API_BASE_URL}/teams/user/${myUserId}`, {
+                headers: { 'Authorization': `Bearer ${userToken}` }
+            });
+            if (res.ok) {
+                const teams = await res.json();
+                // Filter team that contains this hackathon
+                activeTeam = teams.find(t => t.hackathons.includes(selectedHackathonId));
+                
+                const listContainer = document.getElementById('activeMembersList');
+                listContainer.innerHTML = '';
+
+                // Load team members
+                const userIds = [myUserId];
+                
+                // Add current user
+                const meRow = document.createElement('div');
+                meRow.className = 'member-row';
+                meRow.innerHTML = `
+                  <div class="member-avatar" style="border-color: var(--cyan);">ME</div>
+                  <div>
+                    <span style="font-size:0.85rem; display:block;">You</span>
+                    <span class="badge badge-cyan" style="font-size:0.6rem; padding: 2px 6px;">Lead</span>
+                  </div>
+                `;
+                listContainer.appendChild(meRow);
+
+                if (activeTeam) {
+                    activeTeam.members.forEach(m => {
+                        userIds.push(m.userId._id);
+                        
+                        const row = document.createElement('div');
+                        row.className = 'member-row';
+                        row.innerHTML = `
+                          <div class="member-avatar">${m.userId.name.split(' ').map(w => w[0]).join('').toUpperCase()}</div>
+                          <div>
+                            <span style="font-size:0.85rem; display:block;">${m.userId.name}</span>
+                            <span class="badge ${m.status === 'accepted' ? 'badge-green' : 'badge-orange'}" style="font-size:0.6rem; padding: 2px 6px;">${m.status}</span>
+                          </div>
+                        `;
+                        listContainer.appendChild(row);
+                    });
+                }
+
+                // Get or create conversation
+                if (userIds.length < 2) {
+                    // Fallback to self-chat or general if no teammates yet
+                    userIds.push("65a123bc456def7890123456"); // simulated system dummy member to ensure conversationId exists
+                }
+
+                const convRes = await fetch(`${API_BASE_URL}/chat/conversation`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${userToken}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        userIds: userIds,
+                        name: activeTeam ? activeTeam.teamName : 'Teammate Lobby',
+                        isGroup: true
+                    })
+                });
+                if (convRes.ok) {
+                    const conv = await convRes.json();
+                    conversationId = conv._id;
+                    switchChannel('general');
+                }
+            }
+        } catch (e) {
+            console.error('Error fetching team context:', e);
+        }
+    }
+
+    // Fetch and display text channel messages
+    async function fetchMessages() {
+        if (!conversationId || currentChannel !== 'general') return;
+        try {
+            const res = await fetch(`${API_BASE_URL}/chat/conversation/${conversationId}/messages`, {
+                headers: { 'Authorization': `Bearer ${userToken}` }
+            });
+            if (res.ok) {
+                const messages = await res.json();
+                const container = document.getElementById('textChatContainer');
+                container.innerHTML = '';
+
+                messages.forEach(msg => {
+                    const isSelf = msg.sender._id === myUserId;
+                    const div = document.createElement('div');
+                    div.className = isSelf ? 'message message-user' : 'message message-ai';
+                    
+                    div.innerHTML = `
+                      <strong style="color: var(--cyan); display:block; font-size: 0.8rem; margin-bottom: 4px;">${msg.sender.name}</strong>
+                      <span style="font-size: 0.9rem;">${msg.text || ''}</span>
+                    `;
+
+                    // Render attachments
+                    if (msg.attachments && msg.attachments.length > 0) {
+                        const attachDiv = document.createElement('div');
+                        attachDiv.style.marginTop = '8px';
+                        msg.attachments.forEach(file => {
+                            const img = document.createElement('img');
+                            img.src = `http://localhost:5000/${file}`;
+                            img.style.maxWidth = '150px';
+                            img.style.borderRadius = '8px';
+                            img.style.border = '1px solid var(--border-subtle)';
+                            attachDiv.appendChild(img);
+                        });
+                        div.appendChild(attachDiv);
+                    }
+                    container.appendChild(div);
+                });
+                container.scrollTop = container.scrollHeight;
+            }
+        } catch (e) {
+            console.warn(e);
+        }
+    }
+
+    // Send chat message
+    async function sendMessage(e) {
+        e.preventDefault();
+        const input = document.getElementById('chatInput');
+        const text = input.value.trim();
+        const files = document.getElementById('attachmentInput').files;
+
+        if (!text && files.length === 0) return;
+
+        const form = new FormData();
+        form.append('conversationId', conversationId);
+        form.append('senderId', myUserId);
+        form.append('text', text);
+        for (let i = 0; i < files.length; i++) {
+            form.append('attachments', files[i]);
+        }
+
+        try {
+            const res = await fetch(`${API_BASE_URL}/chat/message`, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${userToken}` },
+                body: form
+            });
+            if (res.ok) {
+                input.value = '';
+                document.getElementById('attachmentInput').value = '';
+                fetchMessages();
+            }
+        } catch (err) {
+            console.error('Send error:', err);
+        }
+    }
+
+    // Render announcements timeline details
+    function renderAnnouncements() {
+        const container = document.getElementById('announcementsContainer');
+        container.innerHTML = '';
+
+        const activeServer = document.querySelector('.server-icon.active');
+        if (!activeServer) return;
+
+        const hackDate = new Date(activeServer.dataset.date);
+        const registerDate = new Date(hackDate.getTime() - 4 * 24 * 60 * 60 * 1000);
+        const submitDate = new Date(hackDate.getTime() - 1 * 24 * 60 * 60 * 1000);
+
+        container.innerHTML = `
+          <div class="timeline-card">
+            <span class="badge badge-cyan">Process Stage 1</span>
+            <h3 class="font-space mt-1" style="color: var(--cyan);">Registration Kickoff Date</h3>
+            <p style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 8px;">Registration opens programmatically. Teammates must verify resume uploads and fill roster variables.</p>
+            <strong style="color: var(--orange); font-size: 0.85rem; display:block; margin-top:12px;">📅 Start Date: ${registerDate.toDateString()}</strong>
+          </div>
+
+          <div class="timeline-card urgent">
+            <span class="badge badge-coral">Process Stage 2</span>
+            <h3 class="font-space mt-1" style="color: var(--cyan);">Submission Portal Closing Gate</h3>
+            <p style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 8px;">All team files, code repositories, and project flyers must be locked before the system gate triggers.</p>
+            <strong style="color: var(--coral); font-size: 0.85rem; display:block; margin-top:12px;">📅 Registration Deadline: ${submitDate.toDateString()}</strong>
+          </div>
+
+          <div class="timeline-card">
+            <span class="badge badge-purple">Process Stage 3</span>
+            <h3 class="font-space mt-1" style="color: var(--cyan);">Final Showcase presentation</h3>
+            <p style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 8px;">Physical showcase evaluation, jury testing, and prize pool announcements.</p>
+            <strong style="color: var(--green); font-size: 0.85rem; display:block; margin-top:12px;">📅 Hackathon Date: ${hackDate.toDateString()}</strong>
+          </div>
+        `;
+    }
+
+    // Load available users for matching invites
+    async function loadAllUsers() {
+        try {
+            const res = await fetch(`${API_BASE_URL}/users`, {
+                headers: { 'Authorization': `Bearer ${userToken}` }
+            });
+            if (res.ok) {
+                const users = await res.json();
+                const container = document.getElementById('invitePeersContainer');
+                container.innerHTML = '';
+
+                // Filter out self
+                const otherUsers = users.filter(u => u._id !== myUserId);
+
+                otherUsers.forEach(u => {
+                    const row = document.createElement('div');
+                    row.className = 'member-row';
+                    row.style.justifyContent = 'space-between';
+                    row.innerHTML = `
+                      <div style="display:flex; align-items:center; gap: 8px;">
+                        <div class="member-avatar">${u.name.split(' ').map(w => w[0]).join('').toUpperCase()}</div>
+                        <span style="font-size:0.8rem;">${u.name}</span>
+                      </div>
+                      <button class="btn btn-secondary" onclick="sendTeamInvite('${u._id}', '${u.name}')" style="padding: 4px 8px; font-size:0.7rem;">📩 Invite</button>
+                    `;
+                    container.appendChild(row);
+                });
+            }
+        } catch (e) {
+            console.error(e);
+        }
+    }
+
+    async function sendTeamInvite(targetId, targetName) {
+        if (!activeTeam) {
+            alert("Please create a team roster in the Team Coordinator page before inviting friends!");
+            return;
+        }
+
+        try {
+            const res = await fetch(`${API_BASE_URL}/teams/invite`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${userToken}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    teamId: activeTeam._id,
+                    userId: targetId
+                })
+            });
+            if (res.ok) {
+                alert(`Team invitation sent successfully to ${targetName}!`);
+                loadTeamAndConversation();
+            } else {
+                const data = await res.json();
+                alert(data.message || "Failed to invite peer.");
+            }
+        } catch (e) {
+            alert("Invite request failed.");
+        }
+    }
+
+    // Auto-update message stream
+    setInterval(fetchMessages, 3000);
+
+    // COLLABORATIVE IDEAS SANDBOX JS OPERATIONS
+    let pitchedIdeas = [];
+
+    async function loadPitchedIdeas() {
+        if (!activeTeam) {
+            const listEl = document.getElementById('ideasList');
+            listEl.innerHTML = '<p style="color: var(--text-muted); font-size: 0.85rem; text-align: center; grid-column: 1 / -1; padding: 40px 0;">No active team found. Roster a team under Hack-Auto Agent coordinator tab to begin pitching ideas!</p>';
+            return;
+        }
+
+        try {
+            const res = await fetch(`${API_BASE_URL}/teams/${activeTeam._id}`, {
+                headers: { 'Authorization': `Bearer ${userToken}` }
+            });
+            if (res.ok) {
+                const teamData = await res.json();
+                pitchedIdeas = teamData.pitchedIdeas || [];
+                renderPitchedIdeas();
+            }
+        } catch (e) {
+            console.error('Error fetching pitched ideas:', e);
+        }
+    }
+
+    function renderPitchedIdeas() {
+        const listEl = document.getElementById('ideasList');
+        listEl.innerHTML = '';
+
+        if (pitchedIdeas.length === 0) {
+            listEl.innerHTML = '<p style="color: var(--text-muted); font-size: 0.85rem; text-align: center; grid-column: 1 / -1; padding: 40px 0;">No ideas pitched yet. Click "Pitch New Idea" to start brainstorming!</p>';
+            return;
+        }
+
+        pitchedIdeas.forEach((idea, idx) => {
+            const votesCount = idea.votes ? idea.votes.length : 0;
+            const hasVoted = idea.votes && idea.votes.includes(myUserId);
+            const authorName = idea.pitchedBy ? (idea.pitchedBy.name || idea.pitchedBy) : 'Teammate';
+            
+            const card = document.createElement('div');
+            card.className = 'glass-card';
+            card.style.padding = '20px';
+            card.style.display = 'flex';
+            card.style.flexDirection = 'column';
+            card.style.justifyContent = 'space-between';
+            card.style.border = '1px solid var(--border-subtle)';
+            card.style.transition = 'var(--transition-smooth)';
+            
+            let statusBadge = '';
+            if (idea.verdict === 'Excellent') statusBadge = '<span class="badge badge-green">Excellent</span>';
+            else if (idea.verdict === 'Feasible') statusBadge = '<span class="badge badge-cyan">Feasible</span>';
+            else if (idea.verdict === 'Risky') statusBadge = '<span class="badge badge-orange">Risky</span>';
+            else if (idea.verdict === 'Infeasible') statusBadge = '<span class="badge badge-coral">Infeasible</span>';
+
+            card.innerHTML = `
+              <div>
+                <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom: 8px;">
+                  <strong style="font-family: Space Grotesk, sans-serif; font-size:1rem; color:var(--text-primary);">${idea.title}</strong>
+                  ${statusBadge}
+                </div>
+                <span style="font-size:0.75rem; color:var(--text-muted); display:block; margin-bottom: 12px;">Pitched by: ${authorName}</span>
+                <p style="font-size:0.82rem; color:var(--text-secondary); line-height:1.5; margin-bottom:12px;">${idea.description}</p>
+                ${idea.techStack && idea.techStack.length > 0 ? `
+                  <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:16px;">
+                    ${idea.techStack.map(t => `<span class="badge badge-purple" style="font-size:0.65rem; padding: 2px 6px;">${t}</span>`).join('')}
+                  </div>
+                ` : ''}
+              </div>
+              
+              <div style="border-top: 1px solid var(--border-subtle); padding-top:12px; display:flex; justify-content:space-between; align-items:center;">
+                <button class="btn ${hasVoted ? 'btn-primary' : 'btn-secondary'}" onclick="voteForIdea('${idea._id}')" style="padding: 6px 12px; font-size:0.75rem; display:flex; align-items:center; gap:6px;">
+                  👍 <span>${votesCount} Upvote${votesCount !== 1 ? 's' : ''}</span>
+                </button>
+                
+                <button class="btn btn-secondary" onclick="analyzeIdeaNovelty('${idea._id}')" style="padding: 6px 12px; font-size:0.75rem;">
+                  ${idea.aiReport ? '📋 AI Report' : '🤖 AI Check'}
+                </button>
+              </div>
+            `;
+            listEl.appendChild(card);
+        });
+    }
+
+    // Modal Operations
+    function openPitchIdeaModal() {
+        if (!activeTeam) {
+            alert("Roster a team first before pitching ideas!");
+            return;
+        }
+        document.getElementById('pitchTitle').value = '';
+        document.getElementById('pitchDesc').value = '';
+        document.getElementById('pitchTech').value = '';
+        document.getElementById('pitchBackdrop').style.display = 'block';
+        document.getElementById('pitchModal').style.display = 'block';
+    }
+
+    function closePitchIdeaModal() {
+        document.getElementById('pitchBackdrop').style.display = 'none';
+        document.getElementById('pitchModal').style.display = 'none';
+    }
+
+    async function pitchNewIdea(e) {
+        e.preventDefault();
+        const title = document.getElementById('pitchTitle').value.trim();
+        const description = document.getElementById('pitchDesc').value.trim();
+        const techStackRaw = document.getElementById('pitchTech').value.trim();
+
+        if (!title || !description) return;
+
+        const submitBtn = document.getElementById('pitchSubmitBtn');
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Posting...';
+
+        try {
+            const res = await fetch(`${API_BASE_URL}/teams/${activeTeam._id}/pitch`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${userToken}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    userId: myUserId,
+                    title,
+                    description,
+                    techStack: techStackRaw ? techStackRaw.split(',').map(s => s.trim()) : []
+                })
+            });
+            if (res.ok) {
+                closePitchIdeaModal();
+                loadPitchedIdeas();
+            } else {
+                alert("Failed to pitch idea.");
+            }
+        } catch (err) {
+            console.error(err);
+            alert("Error connecting to server.");
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.textContent = '🚀 Post Pitch';
+        }
+    }
+
+    async function voteForIdea(ideaId) {
+        try {
+            const res = await fetch(`${API_BASE_URL}/teams/${activeTeam._id}/ideas/${ideaId}/vote`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${userToken}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ userId: myUserId })
+            });
+            if (res.ok) {
+                const updatedIdeas = await res.json();
+                pitchedIdeas = updatedIdeas;
+                renderPitchedIdeas();
+            }
+        } catch (e) {
+            console.error('Vote failed:', e);
+        }
+    }
+
+    async function analyzeIdeaNovelty(ideaId) {
+        const idea = pitchedIdeas.find(i => i._id === ideaId);
+        if (!idea) return;
+
+        // If report already exists, view it directly
+        if (idea.aiReport) {
+            viewReportModal(idea);
+            return;
+        }
+
+        // Show loading spinner
+        const listEl = document.getElementById('ideasList');
+        const overlay = document.createElement('div');
+        overlay.style.position = 'fixed';
+        overlay.style.inset = '0';
+        overlay.style.background = 'rgba(0,0,0,0.5)';
+        overlay.style.display = 'flex';
+        overlay.style.alignItems = 'center';
+        overlay.style.justifyContent = 'center';
+        overlay.style.zIndex = '2000';
+        overlay.innerHTML = `
+          <div class="glass-card" style="padding: 24px; text-align:center;">
+            <div style="font-size: 2.5rem; margin-bottom: 12px; animation: pulse 1s infinite;">🤖</div>
+            <strong style="color:var(--cyan); display:block; margin-bottom: 8px;">Gemini Sandbox Audit</strong>
+            <span style="color:var(--text-secondary); font-size:0.8rem;">Evaluating novelty against past Devpost winners...</span>
+          </div>
+        `;
+        document.body.appendChild(overlay);
+
+        try {
+            const res = await fetch(`${API_BASE_URL}/teams/${activeTeam._id}/ideas/${ideaId}/analyze`, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${userToken}` }
+            });
+            document.body.removeChild(overlay);
+            if (res.ok) {
+                const updatedIdeas = await res.json();
+                pitchedIdeas = updatedIdeas;
+                renderPitchedIdeas();
+                const updatedIdea = pitchedIdeas.find(i => i._id === ideaId);
+                viewReportModal(updatedIdea);
+            } else {
+                alert("AI check failed.");
+            }
+        } catch (err) {
+            document.body.removeChild(overlay);
+            alert("Error running analysis.");
+        }
+    }
+
+    function viewReportModal(idea) {
+        document.getElementById('reportModalTitle').textContent = `AI Report: ${idea.title}`;
+        document.getElementById('reportNoveltyVal').textContent = `${idea.noveltyScore}%`;
+        document.getElementById('reportFeasibilityVal').textContent = `${idea.feasibilityScore}%`;
+        
+        // simple markdown formatting
+        const formatted = idea.aiReport
+            .replace(/\*\*(.*?)\*\*/g, '<strong style="color: var(--cyan);">$1</strong>')
+            .replace(/###\s?(.*)/g, '<h4 style="color: var(--orange); margin: 16px 0 6px;">$1</h4>')
+            .replace(/\n/g, '<br>');
+        document.getElementById('reportModalContent').innerHTML = formatted;
+
+        document.getElementById('reportBackdrop').style.display = 'block';
+        document.getElementById('reportModal').style.display = 'block';
+    }
+
+    function closeReportModal() {
+        document.getElementById('reportBackdrop').style.display = 'none';
+        document.getElementById('reportModal').style.display = 'none';
+    }
+  </script>
+
+  <!-- Pitch Idea Modals -->
+  <div class="backdrop" id="pitchBackdrop" style="display: none; z-index: 1100;" onclick="closePitchIdeaModal()"></div>
+  <div class="quiz-drawer" id="pitchModal" style="display: none; max-width: 500px; z-index: 1200; top: 15%;">
+    <h3 class="font-space mb-2" style="color: var(--cyan);">💡 Pitch a Project Idea</h3>
+    <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 20px;">Share a hackathon idea with your teammates to get feedback, votes, and AI verification.</p>
+    <form id="pitchIdeaForm" onsubmit="pitchNewIdea(event)">
+      <div class="form-group">
+        <label>Idea Title *</label>
+        <input type="text" id="pitchTitle" placeholder="e.g. Smart Traffic Optimizer using IoT" required>
+      </div>
+      <div class="form-group">
+        <label>Brief Pitch / Description *</label>
+        <textarea id="pitchDesc" rows="4" placeholder="Explain the problem and how the project will solve it..." required></textarea>
+      </div>
+      <div class="form-group">
+        <label>Proposed Tech Stack (comma separated)</label>
+        <input type="text" id="pitchTech" placeholder="e.g. Node.js, TensorFlow, Google Maps API">
+      </div>
+      <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;">
+        <button type="button" class="btn btn-secondary" onclick="closePitchIdeaModal()">Cancel</button>
+        <button type="submit" class="btn btn-primary" id="pitchSubmitBtn">🚀 Post Pitch</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Detailed AI Report Modal -->
+  <div class="backdrop" id="reportBackdrop" style="display: none; z-index: 1300;" onclick="closeReportModal()"></div>
+  <div class="quiz-drawer" id="reportModal" style="display: none; max-width: 600px; z-index: 1400; top: 10%;">
+    <h3 class="font-space mb-2" style="color: var(--cyan);" id="reportModalTitle">AI Feasibility Report</h3>
+    <div id="reportModalScores" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px;">
+      <div style="background: rgba(255, 255, 255, 0.02); padding: 12px; border-radius: var(--radius-md); border: 1px solid var(--border-subtle); text-align: center;">
+        <span style="font-size: 0.75rem; color: var(--text-secondary); display: block; text-transform: uppercase;">Novelty Score</span>
+        <strong id="reportNoveltyVal" style="font-size: 1.5rem; color: var(--cyan);">0%</strong>
+      </div>
+      <div style="background: rgba(255, 255, 255, 0.02); padding: 12px; border-radius: var(--radius-md); border: 1px solid var(--border-subtle); text-align: center;">
+        <span style="font-size: 0.75rem; color: var(--text-secondary); display: block; text-transform: uppercase;">Feasibility Score</span>
+        <strong id="reportFeasibilityVal" style="font-size: 1.5rem; color: var(--orange);">0%</strong>
+      </div>
+    </div>
+    <div id="reportModalContent" style="font-size: 0.9rem; line-height: 1.6; color: var(--text-secondary); max-height: 300px; overflow-y: auto; padding: 16px; background: rgba(0,0,0,0.25); border-radius: 8px; margin-bottom: 20px; white-space: pre-wrap;"></div>
+    <div style="text-align: right;">
+      <button class="btn btn-secondary" onclick="closeReportModal()">Close</button>
+    </div>
+  </div>
+</body>
+</html>

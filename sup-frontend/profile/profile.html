@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Profile - Phoenix</title>
+  <link rel="stylesheet" href="../phoenix.css">
+  <style>
+    .profile-layout {
+      display: grid;
+      grid-template-columns: 320px 1fr;
+      gap: 24px;
+      margin-top: 20px;
+    }
+
+    .profile-picture-section {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .profile-avatar-placeholder {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--cyan), var(--purple));
+      margin: 0 auto 15px auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 3rem;
+      font-weight: 700;
+      color: #fff;
+      box-shadow: var(--shadow-glow-cyan);
+      border: 2px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .portfolio-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 16px;
+      margin-top: 15px;
+    }
+
+    .portfolio-card {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 20px;
+      transition: var(--transition-smooth);
+    }
+
+    .portfolio-card:hover {
+      background: var(--bg-card-hover);
+      border-color: rgba(0, 245, 255, 0.15);
+      transform: translateY(-2px);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Navigation -->
+  <nav class="navbar">
+    <div class="navbar-brand" onclick="window.location.href='../dashboard/dashboard.html'">PHOENIX</div>
+    <ul class="nav-links">
+      <li><a href="../dashboard/dashboard.html">Dashboard</a></li>
+      <li class="nav-dropdown">
+        <a href="#">Prep Roadmap ▾</a>
+        <div class="nav-dropdown-content">
+          <a href="../interview-prep/roadmap.html">🗺️ Adaptive Syllabus</a>
+          <a href="../interview-prep/practice.html">💬 Mock Interview</a>
+          <a href="../interview-prep/resume.html">📝 Resume Optimizer</a>
+          <a href="../interview-prep/questions.html">🏷️ Company Questions</a>
+          <a href="../interview-prep/peer-match.html">👥 Peer Mock Matching</a>
+        </div>
+      </li>
+      <li class="nav-dropdown">
+        <a href="#">Hackathons ▾</a>
+        <div class="nav-dropdown-content">
+          <a href="../hackathon-agent/agent.html">🤖 Hack-Auto Agent</a>
+          <a href="../hackathon-agent/view.html">📋 Discovery Feed</a>
+          <a href="../hackathon-agent/team.html">👥 Team Roster</a>
+          <a href="../hackathon-agent/chat.html">💬 Discord War Room</a>
+          <a href="../hackathon-agent/portfolio.html">🏆 Portfolio Capture</a>
+        </div>
+      </li>
+      <li><a href="../interview-prep/planner.html">Planner</a></li>
+      <li><a href="./profile.html" class="active">👤 Profile</a></li>
+      <li><a href="#" id="logoutBtn" style="color: var(--coral);">Logout</a></li>
+    </ul>
+  </nav>
+
+  <!-- Particle Background -->
+  <canvas id="particles"></canvas>
+
+  <div class="container">
+    
+    <div class="page-header">
+      <h1>My Professional Profile</h1>
+      <p>Configure your target roles, view accumulated gamification levels, and manage your portfolio of completed hackathons.</p>
+    </div>
+
+    <div class="profile-layout">
+      
+      <!-- LEFT SIDEBAR: Avatar & Details Summary -->
+      <div class="col-sidebar" style="width: 100%;">
+        
+        <div class="glass-card" style="text-align: center;">
+          <div class="profile-avatar-placeholder" id="profileInitials">U</div>
+          <h2 class="font-space" id="profileName" style="font-size: 1.35rem; color: var(--text-primary);">Loading...</h2>
+          <p id="profileState" style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 4px;">Location loading...</p>
+          
+          <div style="margin-top: 20px; display: flex; flex-direction: column; gap: 8px;">
+            <div class="log-row">
+              <span>Experience:</span>
+              <strong id="hudExperience" style="color: var(--cyan);">Beginner</strong>
+            </div>
+            <div class="log-row">
+              <span>XP Level:</span>
+              <strong id="hudLevel" style="color: var(--purple);">Level 1</strong>
+            </div>
+          </div>
+        </div>
+
+        <!-- Add Portfolio Project Form -->
+        <div class="glass-card">
+          <h3 class="font-space mb-2" style="font-size: 1.1rem;">Capture Project</h3>
+          <form id="portfolioForm" style="margin-top: 15px;">
+            <div class="form-group">
+              <label>Project Title</label>
+              <input type="text" id="projectTitle" placeholder="e.g. Aegis Auto Agent" required>
+            </div>
+            <div class="form-group">
+              <label>Brief Pitch</label>
+              <textarea id="projectDesc" placeholder="What problem did you solve?" rows="3" required></textarea>
+            </div>
+            <div class="form-group">
+              <label>Tech Stack</label>
+              <input type="text" id="projectStack" placeholder="React, Node.js, SQLite" required>
+            </div>
+            <div class="form-group">
+              <label>Outcome / Prize</label>
+              <input type="text" id="projectOutcome" placeholder="e.g. 1st Place Winner, Completed Prototype">
+            </div>
+            <button type="submit" class="btn btn-primary" style="width: 100%;">Add to Portfolio</button>
+          </form>
+        </div>
+
+      </div>
+
+      <!-- RIGHT PANEL: Settings Form & Portfolio Grid -->
+      <div class="col-main">
+        
+        <!-- EDIT PROFILE FORM -->
+        <div class="glass-card">
+          <h2 class="font-space mb-2" style="font-size: 1.25rem;">Edit Profile Settings</h2>
+          <form id="profileForm" style="margin-top: 15px;">
+            <div class="flex-row">
+              <div style="flex: 1 1 250px;" class="form-group">
+                <label>Full Name *</label>
+                <input type="text" id="name" placeholder="Enter your full name" required>
+              </div>
+              <div style="flex: 1 1 250px;" class="form-group">
+                <label>State/City *</label>
+                <input type="text" id="state" placeholder="Your location" required>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>Bio</label>
+              <textarea id="bio" placeholder="Tell us about yourself" rows="3"></textarea>
+            </div>
+
+            <div class="flex-row">
+              <div style="flex: 1 1 250px;" class="form-group">
+                <label>Experience Level</label>
+                <select id="experience">
+                  <option value="Beginner">Beginner</option>
+                  <option value="Intermediate">Intermediate</option>
+                  <option value="Advanced">Advanced</option>
+                </select>
+              </div>
+              <div style="flex: 1 1 250px;" class="form-group">
+                <label>GitHub Profile Link</label>
+                <input type="url" id="github" placeholder="https://github.com/username">
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>Portfolio Website URL</label>
+              <input type="url" id="portfolio" placeholder="https://yourportfolio.com">
+            </div>
+
+            <div class="form-group">
+              <label>Programming Languages (comma separated)</label>
+              <input type="text" id="languages" placeholder="Python, JavaScript, Java, C++">
+            </div>
+
+            <div class="form-group">
+              <label>Skills (comma separated)</label>
+              <input type="text" id="skills" placeholder="React, Node.js, Machine Learning, Web Design">
+            </div>
+
+            <div class="form-group">
+              <label>Domains of Interest (comma separated)</label>
+              <input type="text" id="domains" placeholder="AI/ML, Web Development, Mobile Apps, Blockchain">
+            </div>
+
+            <button type="submit" class="btn btn-primary">Save Profile Settings</button>
+          </form>
+        </div>
+
+        <!-- PORTFOLIO LIST -->
+        <div class="glass-card">
+          <h2 class="font-space mb-2" style="font-size: 1.25rem;">My Hackathon Portfolio</h2>
+          <div id="portfolioContainer" class="portfolio-grid">
+            <p style="color: var(--text-secondary); font-size: 0.85rem; padding: 20px 0;">No projects added yet. Capture your first project on the left panel.</p>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+  <script>
+    const API_BASE_URL = 'http://localhost:5000/api';
+    let currentToken = null;
+    let currentUserId = null;
+    let mockPortfolio = [];
+
+    document.addEventListener('DOMContentLoaded', () => {
+        currentToken = localStorage.getItem('token');
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
+        currentUserId = user._id || user.id;
+
+        if (!currentToken || !currentUserId) {
+            window.location.href = '../auth/login.html';
+            return;
+        }
+
+        animateParticles();
+        loadProfileData();
+        loadPortfolio();
+    });
+
+    // Particle Background
+    const canvas = document.getElementById("particles");
+    const ctx = canvas.getContext("2d");
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    let particles = [];
+    for (let i = 0; i < 40; i++) {
+        particles.push({
+            x: Math.random() * canvas.width,
+            y: Math.random() * canvas.height,
+            radius: Math.random() * 1.2,
+            dx: (Math.random() - 0.5) * 0.15,
+            dy: (Math.random() - 0.5) * 0.15
+        });
+    }
+    function animateParticles() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = "rgba(0, 245, 255, 0.25)";
+        particles.forEach(p => {
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+            ctx.fill();
+            p.x += p.dx;
+            p.y += p.dy;
+            if (p.x < 0 || p.x > canvas.width) p.dx *= -1;
+            if (p.y < 0 || p.y > canvas.height) p.dy *= -1;
+        });
+        requestAnimationFrame(animateParticles);
+    }
+    animateParticles();
+
+    // Fetch profile data
+    async function loadProfileData() {
+        try {
+            const res = await fetch(`${API_BASE_URL}/profile/${currentUserId}`, {
+                headers: { 'Authorization': `Bearer ${currentToken}` }
+            });
+            if (res.ok) {
+                const data = await res.json();
+
+                // Set headers
+                document.getElementById('profileName').textContent = data.name || 'Developer';
+                document.getElementById('profileState').textContent = `📍 ${data.state || 'Karnataka, India'}`;
+                document.getElementById('hudExperience').textContent = data.experience || 'Intermediate';
+                document.getElementById('hudLevel').textContent = `Level ${data.level || 1}`;
+
+                const initials = data.name ? data.name.split(' ').map(w => w[0]).join('').toUpperCase() : 'U';
+                document.getElementById('profileInitials').textContent = initials;
+
+                // Form values
+                document.getElementById('name').value = data.name || '';
+                document.getElementById('state').value = data.state || '';
+                document.getElementById('bio').value = data.bio || '';
+                document.getElementById('experience').value = data.experience || 'Beginner';
+                document.getElementById('github').value = data.github || '';
+                document.getElementById('portfolio').value = data.portfolio || '';
+                document.getElementById('languages').value = (data.languages || []).join(', ');
+                document.getElementById('skills').value = (data.skills || []).join(', ');
+                document.getElementById('domains').value = (data.domains || []).join(', ');
+            }
+        } catch (e) {
+            console.error('Error fetching profile settings:', e);
+        }
+    }
+
+    // Save profile data
+    document.getElementById('profileForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const name = document.getElementById('name').value;
+        const state = document.getElementById('state').value;
+        const bio = document.getElementById('bio').value;
+        const experience = document.getElementById('experience').value;
+        const github = document.getElementById('github').value;
+        const portfolio = document.getElementById('portfolio').value;
+        const languages = document.getElementById('languages').value.split(',').map(s => s.trim()).filter(s => s);
+        const skills = document.getElementById('skills').value.split(',').map(s => s.trim()).filter(s => s);
+        const domains = document.getElementById('domains').value.split(',').map(s => s.trim()).filter(s => s);
+
+        try {
+            const res = await fetch(`${API_BASE_URL}/profile`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${currentToken}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ userId: currentUserId, name, state, bio, experience, github, portfolio, languages, skills, domains })
+            });
+
+            if (res.ok) {
+                alert('Profile updated successfully!');
+                loadProfileData();
+            } else {
+                alert('Failed to update profile details.');
+            }
+        } catch (e) {
+            alert('Connection error.');
+        }
+    });
+
+    // Capture portfolio project
+    document.getElementById('portfolioForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const title = document.getElementById('projectTitle').value;
+        const description = document.getElementById('projectDesc').value;
+        const techStack = document.getElementById('projectStack').value.split(',').map(s => s.trim());
+        const outcome = document.getElementById('projectOutcome').value;
+
+        // Post to backend
+        try {
+            const res = await fetch(`${API_BASE_URL}/profile/portfolio`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${currentToken}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ userId: currentUserId, title, description, techStack, outcome })
+            });
+            if (res.ok) {
+                alert('Project captured and added to portfolio successfully!');
+                document.getElementById('portfolioForm').reset();
+                loadPortfolio();
+            }
+        } catch (err) {
+            // Local fallback logic
+            mockPortfolio.push({ title, description, techStack, outcome });
+            renderPortfolioList(mockPortfolio);
+            document.getElementById('portfolioForm').reset();
+        }
+    });
+
+    // Load user portfolio
+    async function loadPortfolio() {
+        try {
+            const res = await fetch(`${API_BASE_URL}/profile/portfolio/${currentUserId}`, {
+                headers: { 'Authorization': `Bearer ${currentToken}` }
+            });
+            if (res.ok) {
+                const projects = await res.json();
+                renderPortfolioList(projects);
+            }
+        } catch (e) {
+            renderPortfolioList(mockPortfolio);
+        }
+    }
+
+    function renderPortfolioList(projects) {
+        const container = document.getElementById('portfolioContainer');
+        
+        if (projects.length === 0) {
+            container.innerHTML = '<p style="color: var(--text-secondary); font-size: 0.85rem; padding: 20px 0;">No projects added yet. Capture your first project on the left panel.</p>';
+            return;
+        }
+
+        container.innerHTML = '';
+        projects.forEach(p => {
+            const card = document.createElement('div');
+            card.className = 'portfolio-card';
+            card.innerHTML = `
+                <h3 class="font-space" style="color:var(--cyan); font-size:1.05rem;">${p.title}</h3>
+                <p style="font-size:0.85rem; color:var(--text-secondary); margin-top:8px; line-height:1.5;">${p.description}</p>
+                <div style="margin-top:12px; border-top:1px solid var(--border-subtle); padding-top:8px;">
+                  <span style="font-size:0.75rem; color:var(--text-muted); display:block;">Tech Stack:</span>
+                  <div style="display:flex; flex-wrap:wrap; gap:4px; margin-top:4px;">
+                    ${p.techStack.map(t => `<span class="badge badge-purple" style="font-size:0.6rem; padding:1px 6px;">${t}</span>`).join('')}
+                  </div>
+                  ${p.outcome ? `<span class="badge badge-orange" style="font-size:0.65rem; padding:2px 8px; margin-top:10px; display:inline-block;">🏆 ${p.outcome}</span>` : ''}
+                </div>
+            `;
+            container.appendChild(card);
+        });
+    }
+
+    // Logout
+    document.getElementById('logoutBtn').addEventListener('click', (e) => {
+        e.preventDefault();
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        window.location.href = '../auth/login.html';
+    });
+  </script>
+
+</body>
+</html>
